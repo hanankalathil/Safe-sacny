@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safe Scan — Admin Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="/socket.io/socket.io.js"></script>
+    <style>
+        /* ═══════════════════ RESET & BASE ═══════════════════ */
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Inter',-apple-system,sans-serif;background:#0a0a1a;color:#f0eef6;min-height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased}
+        ::-webkit-scrollbar{width:5px}
+        ::-webkit-scrollbar-track{background:transparent}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,0.1);border-radius:3px}
+
+        /* ═══════════════════ LAYOUT ═══════════════════ */
+        .app{display:flex;height:100vh}
+
+        /* ─── Sidebar ─── */
+        .sidebar{
+            width:260px;min-width:260px;height:100vh;
+            background:rgba(255,255,255,0.04);
+            border-right:1px solid rgba(255,255,255,0.06);
+            display:flex;flex-direction:column;
+            backdrop-filter:blur(20px);
+            transition:all 0.3s ease;
+            z-index:50;
+        }
+        .sidebar-logo{
+            display:flex;align-items:center;gap:12px;
+            padding:0 20px;height:64px;
+            border-bottom:1px solid rgba(255,255,255,0.06);
+        }
+        .sidebar-logo .icon{
+            width:36px;height:36px;border-radius:10px;
+            background:linear-gradient(135deg,rgba(124,106,255,0.3),rgba(93,228,199,0.15));
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        }
+        .sidebar-logo .icon svg{width:20px;height:20px;color:#a594fd}
+        .sidebar-logo span{
+            font-weight:700;font-size:0.875rem;
+            background:linear-gradient(135deg,#a594fd,#5de4c7);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+        }
+
+        .sidebar-nav{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:4px}
+        .nav-item{
+            display:flex;align-items:center;gap:12px;
+            padding:10px 14px;border-radius:12px;
+            font-size:0.875rem;font-weight:500;
+            color:rgba(255,255,255,0.45);cursor:pointer;
+            transition:all 0.2s;position:relative;
+            border:none;background:none;width:100%;text-align:left;
+        }
+        .nav-item:hover{color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.04)}
+        .nav-item.active{color:#a594fd;background:rgba(124,106,255,0.1)}
+        .nav-item.active::before{
+            content:'';position:absolute;left:0;top:50%;transform:translateY(-50%);
+            width:3px;height:20px;background:#7c6aff;border-radius:0 4px 4px 0;
+            box-shadow:0 0 12px rgba(124,106,255,0.5);
+        }
+        .nav-item svg{width:20px;height:20px;flex-shrink:0}
+
+        .sidebar-bottom{padding:12px;border-top:1px solid rgba(255,255,255,0.06)}
+        .btn-logout{
+            display:flex;align-items:center;gap:12px;
+            padding:10px 14px;border-radius:12px;width:100%;
+            font-size:0.85rem;color:rgba(255,255,255,0.35);
+            cursor:pointer;transition:all 0.2s;
+            border:none;background:none;font-family:inherit;
+        }
+        .btn-logout:hover{color:#ff6b8a;background:rgba(255,107,138,0.1)}
+        .btn-logout svg{width:20px;height:20px}
+
+        /* ─── Main Area ─── */
+        .main{flex:1;display:flex;flex-direction:column;min-width:0}
+
+        /* ─── Top Bar ─── */
+        .topbar{
+            height:64px;display:flex;align-items:center;
+            justify-content:space-between;padding:0 24px;
+            border-bottom:1px solid rgba(255,255,255,0.06);
+            backdrop-filter:blur(20px);background:rgba(10,10,26,0.8);
+            flex-shrink:0;
+        }
+        .topbar h2{font-size:1.15rem;font-weight:600}
+        .topbar-right{display:flex;align-items:center;gap:16px}
+        .admin-avatar{
+            width:34px;height:34px;border-radius:50%;
+            background:linear-gradient(135deg,#7c6aff,#5de4c7);
+            display:flex;align-items:center;justify-content:center;
+            font-size:0.75rem;font-weight:700;
+        }
+        .connection-dot{
+            width:8px;height:8px;border-radius:50%;
+            display:inline-block;margin-right:6px;
+        }
+        .connection-dot.on{background:#22c55e;box-shadow:0 0 8px rgba(34,197,94,0.5)}
+        .connection-dot.off{background:#ff6b8a;box-shadow:0 0 8px rgba(255,107,138,0.5)}
+
+        /* ─── Content ─── */
+        .content{flex:1;overflow-y:auto;padding:24px}
+        .page{display:none}
+        .page.active{display:block;animation:fadeIn 0.3s ease}
+        @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+        /* ═══════════════════ GLASS COMPONENTS ═══════════════════ */
+        .glass{
+            background:rgba(255,255,255,0.06);backdrop-filter:blur(20px);
+            border:1px solid rgba(255,255,255,0.1);border-radius:16px;
+            box-shadow:0 8px 32px rgba(0,0,0,0.3),inset 0 1px 0 rgba(255,255,255,0.15);
+        }
+        .glass-input{
+            background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.08);
+            border-radius:10px;padding:10px 14px;color:#f0eef6;font-size:0.875rem;
+            font-family:inherit;outline:none;width:100%;transition:all 0.3s;
+        }
+        .glass-input:focus{border-color:#7c6aff;box-shadow:0 0 0 3px rgba(124,106,255,0.12)}
+        .glass-input::placeholder{color:rgba(240,238,246,0.25)}
+        .glass-btn{
+            background:linear-gradient(135deg,#7c6aff,#6349e0);border:1px solid rgba(124,106,255,0.4);
+            border-radius:10px;padding:10px 20px;color:white;font-size:0.85rem;font-weight:600;
+            font-family:inherit;cursor:pointer;transition:all 0.3s;
+            box-shadow:0 4px 15px rgba(124,106,255,0.3);
+        }
+        .glass-btn:hover{transform:translateY(-1px);box-shadow:0 6px 25px rgba(124,106,255,0.45)}
+        .glass-btn:disabled{opacity:0.5;cursor:not-allowed;transform:none}
+
+        /* ─── Stats Cards ─── */
+        .stats-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+        .stat-card{
+            padding:16px 20px;display:flex;align-items:center;gap:16px;
+        }
+        .stat-icon{
+            width:44px;height:44px;border-radius:12px;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        }
+        .stat-icon.teal{background:rgba(93,228,199,0.1);color:#5de4c7}
+        .stat-icon.purple{background:rgba(124,106,255,0.1);color:#a594fd}
+        .stat-icon.amber{background:rgba(255,184,108,0.1);color:#ffb86c}
+        .stat-icon svg{width:22px;height:22px}
+        .stat-label{font-size:0.75rem;color:rgba(255,255,255,0.4);display:flex;align-items:center;gap:6px}
+        .stat-value{font-size:1.75rem;font-weight:700;font-variant-numeric:tabular-nums}
+        .stat-value.teal{color:#5de4c7}
+        .stat-value.purple{color:#a594fd}
+        .stat-value.amber{color:#ffb86c}
+
+        .live-dot{
+            width:6px;height:6px;border-radius:50%;background:#22c55e;
+            box-shadow:0 0 8px rgba(34,197,94,0.6);
+            animation:pulse 1.5s ease-in-out infinite;display:inline-block;
+        }
+        @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+
+        /* ─── Controls ─── */
+        .controls{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+        .grid-btns{display:flex;gap:6px}
+        .grid-btn{
+            padding:6px 14px;border-radius:8px;font-size:0.75rem;font-weight:600;
+            background:none;border:1px solid transparent;color:rgba(255,255,255,0.35);
+            cursor:pointer;font-family:inherit;transition:all 0.2s;
+        }
+        .grid-btn.active{background:rgba(124,106,255,0.12);color:#a594fd;border-color:rgba(124,106,255,0.3)}
+        .grid-btn:hover{color:rgba(255,255,255,0.7)}
+
+        /* ─── Feed Grid ─── */
+        .feed-grid{display:grid;gap:16px}
+        .feed-grid.g2{grid-template-columns:repeat(2,1fr)}
+        .feed-grid.g3{grid-template-columns:repeat(3,1fr)}
+        .feed-grid.g4{grid-template-columns:repeat(4,1fr)}
+
+        .feed-card{
+            cursor:pointer;overflow:hidden;transition:all 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .feed-card:hover{transform:translateY(-4px);border-color:rgba(124,106,255,0.35);box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 30px rgba(124,106,255,0.1)}
+        .feed-card.online{border-color:rgba(34,197,94,0.2)}
+        .feed-card.online:hover{border-color:rgba(34,197,94,0.4);box-shadow:0 16px 48px rgba(0,0,0,0.4),0 0 30px rgba(34,197,94,0.1)}
+
+        .feed-img-wrap{position:relative;width:100%;aspect-ratio:4/3;overflow:hidden;border-radius:14px 14px 0 0}
+        .feed-img{width:100%;height:100%;object-fit:cover}
+        .feed-placeholder{
+            width:100%;height:100%;
+            background:linear-gradient(135deg,#111128,#0a0a1a);
+            display:flex;align-items:center;justify-content:center;
+        }
+        .feed-placeholder svg{width:32px;height:32px;color:rgba(255,255,255,0.08)}
+        .feed-overlay{
+            position:absolute;top:10px;left:10px;right:10px;
+            display:flex;justify-content:space-between;align-items:flex-start;
+        }
+        .badge-live{
+            display:inline-flex;align-items:center;gap:5px;
+            padding:3px 8px;background:rgba(34,197,94,0.15);
+            border:1px solid rgba(34,197,94,0.3);border-radius:100px;
+            font-size:0.65rem;font-weight:700;color:#22c55e;
+            text-transform:uppercase;letter-spacing:0.5px;
+        }
+        .badge-offline{
+            display:inline-flex;align-items:center;gap:5px;
+            padding:3px 8px;background:rgba(255,255,255,0.05);
+            border:1px solid rgba(255,255,255,0.1);border-radius:100px;
+            font-size:0.65rem;font-weight:600;color:rgba(255,255,255,0.3);
+            text-transform:uppercase;letter-spacing:0.5px;
+        }
+        .badge-uuid{
+            font-size:0.7rem;padding:3px 8px;border-radius:8px;
+            background:rgba(0,0,0,0.5);backdrop-filter:blur(6px);
+            color:rgba(255,255,255,0.8);
+        }
+        .feed-info{padding:12px}
+        .feed-meta{display:flex;justify-content:space-between;font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:6px}
+        .feed-counts{display:flex;gap:12px;font-size:0.7rem;color:rgba(255,255,255,0.3)}
+        .feed-counts svg{width:12px;height:12px;margin-right:3px;vertical-align:-2px}
+
+        /* ─── Empty State ─── */
+        .empty-state{
+            display:flex;flex-direction:column;align-items:center;
+            justify-content:center;padding:80px 20px;text-align:center;
+        }
+        .empty-icon{
+            width:80px;height:80px;border-radius:24px;
+            background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);
+            display:flex;align-items:center;justify-content:center;margin-bottom:24px;
+        }
+        .empty-icon svg{width:36px;height:36px;color:rgba(255,255,255,0.15)}
+        .empty-state h3{font-size:1.1rem;color:rgba(255,255,255,0.35);margin-bottom:8px}
+        .empty-state p{font-size:0.85rem;color:rgba(255,255,255,0.2);max-width:360px}
+
+        /* ─── Users Table ─── */
+        .search-wrap{max-width:360px;position:relative;margin-bottom:20px}
+        .search-wrap svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);width:16px;height:16px;color:rgba(255,255,255,0.25);pointer-events:none}
+        .search-wrap input{padding-left:38px}
+
+        table{width:100%;border-collapse:collapse}
+        th{text-align:left;font-size:0.7rem;font-weight:600;color:rgba(255,255,255,0.35);padding:10px 14px;border-bottom:1px solid rgba(255,255,255,0.06);text-transform:uppercase;letter-spacing:0.5px}
+        td{padding:12px 14px;border-bottom:1px solid rgba(255,255,255,0.04);font-size:0.85rem;transition:background 0.2s}
+        tr:hover td{background:rgba(255,255,255,0.02)}
+        .uuid-text{font-family:'SF Mono','Fira Code',monospace;color:#a594fd;font-size:0.8rem}
+        .btn-delete{
+            padding:6px 8px;border-radius:8px;background:none;border:none;
+            color:rgba(255,255,255,0.25);cursor:pointer;transition:all 0.2s;
+        }
+        .btn-delete:hover{color:#ff6b8a;background:rgba(255,107,138,0.1)}
+        .btn-delete svg{width:16px;height:16px}
+
+        /* ─── Recordings ─── */
+        .recording-card{padding:16px;margin-bottom:12px}
+        .rec-header{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+        .rec-icon{
+            width:40px;height:40px;border-radius:10px;
+            background:rgba(124,106,255,0.1);
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+        }
+        .rec-icon svg{width:20px;height:20px;color:#a594fd}
+        .rec-info .rec-user{font-size:0.85rem;font-weight:500}
+        .rec-info .rec-user span{color:#a594fd;font-family:monospace}
+        .rec-info .rec-time{font-size:0.7rem;color:rgba(255,255,255,0.3);margin-top:2px}
+
+        /* 🔊 Listen Live */
+        .listen-btn{
+            position:absolute;bottom:10px;right:10px;z-index:5;
+            background:rgba(124,106,255,0.8);border:none;border-radius:50%;
+            width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+            cursor:pointer;transition:all 0.3s;color:white;font-size:1rem;
+        }
+        .listen-btn:hover{background:rgba(124,106,255,1);transform:scale(1.1)}
+        .listen-btn.active{background:rgba(34,197,94,0.9);animation:pulse 1.5s ease-in-out infinite}
+        .listen-btn svg{width:18px;height:18px}
+
+        .switch-btn{
+            position:absolute;bottom:10px;right:56px;z-index:5;
+            background:rgba(255,107,138,0.8);border:none;border-radius:50%;
+            width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+            cursor:pointer;transition:all 0.3s;color:white;font-size:1rem;
+        }
+        .switch-btn:hover{background:rgba(255,107,138,1);transform:scale(1.1)}
+        .switch-btn svg{width:18px;height:18px}
+
+        /* ─── Audio Player ─── */
+        .audio-player{display:flex;align-items:center;gap:10px}
+        .play-btn{
+            width:36px;height:36px;border-radius:50%;
+            display:flex;align-items:center;justify-content:center;flex-shrink:0;
+            background:rgba(255,255,255,0.06);border:none;color:rgba(255,255,255,0.5);
+            cursor:pointer;transition:all 0.2s;
+        }
+        .play-btn:hover{background:rgba(255,255,255,0.1);color:rgba(255,255,255,0.8)}
+        .play-btn.playing{background:#7c6aff;color:white;box-shadow:0 0 15px rgba(124,106,255,0.4)}
+        .play-btn svg{width:16px;height:16px}
+        .progress-wrap{flex:1;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;cursor:pointer;position:relative}
+        .progress-bar{height:100%;background:linear-gradient(90deg,#7c6aff,#a594fd);border-radius:2px;width:0%;transition:width 0.1s linear}
+        .audio-time{font-size:0.7rem;color:rgba(255,255,255,0.3);font-variant-numeric:tabular-nums;width:80px;text-align:right;flex-shrink:0}
+
+        /* ─── Settings ─── */
+        .settings-section{max-width:560px}
+        .settings-card{padding:24px;margin-bottom:20px}
+        .settings-card h3{font-size:1rem;font-weight:600;margin-bottom:4px}
+        .settings-card p{font-size:0.75rem;color:rgba(255,255,255,0.35);margin-bottom:20px}
+        .form-group{margin-bottom:16px}
+        .form-group label{display:block;font-size:0.75rem;color:rgba(255,255,255,0.4);margin-bottom:6px}
+        .msg-ok{color:#5de4c7;font-size:0.8rem;margin-top:8px;display:none}
+        .msg-err{color:#ff6b8a;font-size:0.8rem;margin-top:8px;display:none}
+
+        /* ─── Modal ─── */
+        .modal-backdrop{
+            position:fixed;inset:0;background:rgba(0,0,0,0.8);backdrop-filter:blur(4px);
+            z-index:200;display:none;align-items:center;justify-content:center;padding:20px;
+        }
+        .modal-backdrop.show{display:flex}
+        .modal{
+            background:rgba(17,17,40,0.95);backdrop-filter:blur(30px);
+            border:1px solid rgba(255,255,255,0.1);border-radius:20px;
+            width:100%;max-width:640px;max-height:90vh;overflow-y:auto;
+        }
+        .modal-header{
+            display:flex;align-items:center;justify-content:space-between;
+            padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.06);
+        }
+        .modal-header .close-btn{
+            padding:8px;border-radius:8px;background:none;border:none;
+            color:rgba(255,255,255,0.4);cursor:pointer;transition:all 0.2s;
+        }
+        .modal-header .close-btn:hover{background:rgba(255,255,255,0.05);color:white}
+        .modal-header .close-btn svg{width:20px;height:20px}
+        .modal-body{padding:20px}
+        .modal-body img{width:100%;border-radius:12px;margin-bottom:16px}
+        .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+        .detail-item{
+            padding:12px;border-radius:12px;
+            background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.06);
+        }
+        .detail-item .label{font-size:0.7rem;color:rgba(255,255,255,0.35);margin-bottom:4px}
+        .detail-item .value{font-size:0.85rem;font-weight:500}
+
+        /* ─── Alert Toast ─── */
+        .toast{
+            position:fixed;top:20px;right:20px;z-index:300;
+            padding:12px 20px;border-radius:12px;
+            background:rgba(255,184,108,0.15);border:1px solid rgba(255,184,108,0.3);
+            display:none;align-items:center;gap:10px;font-size:0.85rem;color:#ffb86c;
+            animation:slideIn 0.3s ease;
+        }
+        .toast.show{display:flex}
+        .toast svg{width:18px;height:18px;flex-shrink:0}
+        @keyframes slideIn{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+        /* ─── Video Lightbox (Big Screen Overlay) ─── */
+        .video-lightbox {
+            position: fixed;
+            inset: 0;
+            background: rgba(5, 5, 15, 0.96);
+            backdrop-filter: blur(25px);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            animation: fadeIn 0.2s ease-out;
+        }
+        .video-lightbox.show {
+            display: flex;
+        }
+        .lightbox-content {
+            position: relative;
+            width: 100%;
+            max-width: 960px;
+            aspect-ratio: 4/3;
+            background: #000;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            box-shadow: 0 30px 80px rgba(0, 0, 0, 0.8), 0 0 40px rgba(124, 106, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .close-lightbox {
+            position: absolute;
+            top: 24px;
+            right: 24px;
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: rgba(255, 255, 255, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            z-index: 2010;
+        }
+        .close-lightbox:hover {
+            background: rgba(255, 107, 138, 0.15);
+            color: #ff6b8a;
+            border-color: rgba(255, 107, 138, 0.3);
+            transform: scale(1.05);
+        }
+        .close-lightbox svg {
+            width: 20px;
+            height: 20px;
+        }
+        .lightbox-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: linear-gradient(to top, rgba(10, 10, 26, 0.95), rgba(10, 10, 26, 0.6) 50%, transparent);
+            padding: 24px;
+            z-index: 2005;
+        }
+        .lightbox-meta {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        #lightboxUuid {
+            font-family: monospace;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.85);
+            font-weight: 500;
+        }
+        
+        @media(max-width:768px){
+            .lightbox-content {
+                max-width: 100%;
+                aspect-ratio: auto;
+                height: 60vh;
+            }
+            .close-lightbox {
+                top: 16px;
+                right: 16px;
+                width: 38px;
+                height: 38px;
+            }
+        }
+
+        /* ─── Sidebar Backdrop ─── */
+        .sidebar-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(4px);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .sidebar-backdrop.show {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* ─── Hamburger Menu Button ─── */
+        .menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: rgba(255, 255, 255, 0.65);
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 10px;
+            transition: all 0.2s;
+            align-items: center;
+            justify-content: center;
+            margin-right: 12px;
+        }
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: #a594fd;
+        }
+        .menu-btn svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        /* ═══════════════════ RESPONSIVE ═══════════════════ */
+        @media(max-width:768px){
+            .sidebar {
+                position: fixed;
+                left: 0;
+                top: 0;
+                bottom: 0;
+                transform: translateX(-100%);
+                z-index: 1000;
+                background: rgba(10, 10, 26, 0.96);
+                box-shadow: 5px 0 25px rgba(0, 0, 0, 0.5);
+                backdrop-filter: blur(30px);
+            }
+            .sidebar.open {
+                transform: translateX(0);
+            }
+            .menu-btn {
+                display: inline-flex;
+            }
+            .stats-row {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .feed-grid.g2, .feed-grid.g3, .feed-grid.g4 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .grid-btns {
+                display: none !important;
+            }
+            .detail-grid {
+                grid-template-columns: 1fr;
+            }
+            .topbar {
+                padding: 0 16px;
+            }
+            .content {
+                padding: 16px;
+            }
+        }
+        @media(max-width:480px){
+            .stats-row {
+                grid-template-columns: 1fr;
+            }
+            .feed-grid.g2, .feed-grid.g3, .feed-grid.g4 {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar Backdrop for Mobile Drawer -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+    <!-- Video/Image Lightbox Overlay (Big Screen Mode) -->
+    <div class="video-lightbox" id="videoLightbox" onclick="closeLightbox()">
+        <button class="close-lightbox" onclick="closeLightbox(event)" title="Close Lightbox">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+        </button>
+        <div class="lightbox-content" onclick="event.stopPropagation()">
+            <video id="lightboxVideo" autoplay playsinline style="display:none; width:100%; height:100%; object-fit:contain; background:#000;"></video>
+            <img id="lightboxImg" src="" alt="Captured Frame" style="display:none; width:100%; height:100%; object-fit:contain;">
+            <div class="lightbox-overlay">
+                <div class="lightbox-meta">
+                    <span id="lightboxBadge"></span>
+                    <span id="lightboxUuid"></span>
+                </div>
+                <button class="glass-btn" id="lightboxSpeaker" onclick="toggleLightboxMute(event)"></button>
+                <button class="glass-btn" id="lightboxSwitchCamera" onclick="switchCameraLightbox(event)" style="display:none;" title="Switch Camera">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 3v6h-6"/><path d="M21 9l-4.5-4.5A9 9 0 0 0 3 12"/><path d="M3 21v-6h6"/><path d="M3 15l4.5 4.5A9 9 0 0 0 21 12"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Audio Alert Toast -->
+    <div class="toast" id="audioToast">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+        <span id="toastMsg">New recording</span>
+    </div>
+
+    <!-- User Detail Modal -->
+    <div class="modal-backdrop" id="userModal" onclick="if(event.target===this)closeModal()">
+        <div class="modal">
+            <div class="modal-header">
+                <div style="display:flex;align-items:center;gap:10px">
+                    <span id="modalBadge"></span>
+                    <span id="modalUuid" style="font-size:0.85rem;font-weight:500"></span>
+                </div>
+                <button class="close-btn" onclick="closeModal()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div style="position:relative; width:100%; margin-bottom:16px;">
+                    <!-- Static Photo -->
+                    <img id="modalCaptureImage" src="" alt="Latest capture" style="width:100%; border-radius:12px; display:block;">
+                    
+                    <!-- Live Video stream -->
+                    <video id="modalLiveVideo" autoplay playsinline style="display:none; width:100%; border-radius:12px; background:#000; aspect-ratio:4/3; object-fit:cover;"></video>
+                    
+                    <!-- Status indicator -->
+                    <div id="modalStreamOverlay" style="position:absolute; top:10px; right:10px; display:none; background:rgba(0,0,0,0.6); padding:4px 8px; border-radius:6px; font-size:0.75rem; color:#fff; align-items:center; gap:6px;">
+                        <span class="live-dot" style="width:6px; height:6px; background:#ff4a4a; box-shadow:0 0 8px #ff4a4a;"></span>
+                        <span id="modalStreamStatusText">STREAMING</span>
+                    </div>
+                </div>
+
+                <!-- Controls -->
+                <div id="modalStreamControls" style="display:none; margin-bottom:16px; flex-wrap:wrap; gap:8px;">
+                    <button id="startStreamBtn" class="glass-btn" style="width:100%; display:flex; align-items:center; justify-content:center; gap:8px;" onclick="startLiveStream()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"/><rect x="1" y="5" width="15" height="14" rx="2" ry="2"/></svg>
+                        Watch Live Video & Voice
+                    </button>
+                    <button id="switchCameraBtnModal" class="glass-btn" style="flex:1; display:none; align-items:center; justify-content:center; gap:8px;" onclick="switchCameraModal()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 3v6h-6"/><path d="M21 9l-4.5-4.5A9 9 0 0 0 3 12"/><path d="M3 21v-6h6"/><path d="M3 15l4.5 4.5A9 9 0 0 0 21 12"/></svg>
+                        Switch Camera
+                    </button>
+                    <button id="stopStreamBtn" class="glass-btn" style="flex:1; background:linear-gradient(135deg,#ff6b8a,#e04963); border-color:rgba(255,107,138,0.4); display:none; align-items:center; justify-content:center; gap:8px;" onclick="stopLiveStream()">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg>
+                        Stop Live Stream
+                    </button>
+                </div>
+
+                <!-- Details Grid -->
+                <div class="detail-grid">
+                    <div class="detail-item"><div class="label">Device</div><div class="value" id="modalDeviceVal">—</div></div>
+                    <div class="detail-item"><div class="label">Browser</div><div class="value" id="modalBrowserVal">—</div></div>
+                    <div class="detail-item"><div class="label">Country/TZ</div><div class="value" id="modalCountryVal">—</div></div>
+                    <div class="detail-item"><div class="label">Last Active</div><div class="value" id="modalLastActiveVal">—</div></div>
+                    <div class="detail-item"><div class="label">Captures</div><div class="value" id="modalCapturesVal">0</div></div>
+                    <div class="detail-item"><div class="label">Recordings</div><div class="value" id="modalRecordingsVal">0</div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- App -->
+    <div class="app">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-logo" style="justify-content: space-between;">
+                <div style="display:flex;align-items:center;gap:12px">
+                    <div class="icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    </div>
+                    <span>Safe Scan Admin</span>
+                </div>
+                <button class="menu-btn" style="margin-right: 0;" onclick="closeSidebar()" title="Close Menu">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" x2="6" y1="6" y2="18"/><line x1="6" x2="18" y1="6" y2="18"/></svg>
+                </button>
+            </div>
+            <nav class="sidebar-nav">
+                <button class="nav-item active" data-page="feeds" onclick="showPage('feeds')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
+                    Live Feeds
+                </button>
+                <button class="nav-item" data-page="users" onclick="showPage('users')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Users
+                </button>
+                <button class="nav-item" data-page="recordings" onclick="showPage('recordings')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>
+                    Recordings
+                </button>
+                <button class="nav-item" data-page="settings" onclick="showPage('settings')">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+                    Settings
+                </button>
+            </nav>
+            <div class="sidebar-bottom">
+                <button class="btn-logout" onclick="doLogout()">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" x2="9" y1="12" y2="12"/></svg>
+                    Sign Out
+                </button>
+            </div>
+        </aside>
+
+        <!-- Main -->
+        <div class="main">
+            <header class="topbar">
+                <div style="display:flex;align-items:center;">
+                    <button class="menu-btn" id="menuBtn" onclick="toggleSidebar(event)" title="Open Menu">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" x2="20" y1="12" y2="12"/><line x1="4" x2="20" y1="6" y2="6"/><line x1="4" x2="20" y1="18" y2="18"/></svg>
+                    </button>
+                    <h2 id="pageTitle">Live Feeds</h2>
+                </div>
+                <div class="topbar-right">
+                    <span style="font-size:0.8rem;color:rgba(255,255,255,0.4)">
+                        <span class="connection-dot off" id="connDot"></span>
+                        <span id="connText">Connecting...</span>
+                    </span>
+                    <div class="admin-avatar" id="adminAvatar">A</div>
+                </div>
+            </header>
+
+            <div class="content">
+                <!-- ═══ LIVE FEEDS PAGE ═══ -->
+                <div class="page active" id="page-feeds">
+                    <div class="stats-row">
+                        <div class="stat-card glass">
+                            <div class="stat-icon teal"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg></div>
+                            <div><div class="stat-label">Online Users <span class="live-dot"></span></div><div class="stat-value teal" id="statOnline">0</div></div>
+                        </div>
+                        <div class="stat-card glass">
+                            <div class="stat-icon purple"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg></div>
+                            <div><div class="stat-label">Total Captures</div><div class="stat-value purple" id="statCaptures">0</div></div>
+                        </div>
+                        <div class="stat-card glass">
+                            <div class="stat-icon amber"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></div>
+                            <div><div class="stat-label">Total Recordings</div><div class="stat-value amber" id="statRecordings">0</div></div>
+                        </div>
+                    </div>
+                    <div class="controls">
+                        <span style="font-size:0.85rem;color:rgba(255,255,255,0.5)">📡 <span id="feedCount">0</span> users</span>
+                        <div class="grid-btns">
+                            <button class="grid-btn" onclick="setGrid(2)">2×2</button>
+                            <button class="grid-btn active" onclick="setGrid(3)">3×3</button>
+                            <button class="grid-btn" onclick="setGrid(4)">4×4</button>
+                        </div>
+                    </div>
+                    <div id="feedGrid" class="feed-grid g3"></div>
+                    <div id="emptyState" class="empty-state" style="display:none">
+                        <div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="20" height="14" x="2" y="3" rx="2"/><line x1="8" x2="16" y1="21" y2="21"/><line x1="12" x2="12" y1="17" y2="21"/></svg></div>
+                        <h3>Waiting for users to connect...</h3>
+                        <p>When users open the Safe Scan app, their live camera feeds will appear here in real-time.</p>
+                        <div class="live-dot" style="margin-top:16px;width:8px;height:8px"></div>
+                    </div>
+                </div>
+
+                <!-- ═══ USERS PAGE ═══ -->
+                <div class="page" id="page-users">
+                    <div class="search-wrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" x2="16.65" y1="21" y2="16.65"/></svg>
+                        <input type="text" class="glass-input" id="userSearch" placeholder="Search by UUID, country, device..." oninput="loadUsers()">
+                    </div>
+                    <div class="glass" style="overflow:hidden">
+                        <div style="overflow-x: auto; width: 100%;">
+                            <table style="min-width: 800px;">
+                                <thead><tr><th>User ID</th><th>Country</th><th>Device</th><th>Browser</th><th>Status</th><th>Last Active</th><th>📷</th><th>🎤</th><th></th></tr></thead>
+                                <tbody id="usersTable"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ═══ RECORDINGS PAGE ═══ -->
+                <div class="page" id="page-recordings">
+                    <div style="margin-bottom:20px">
+                        <h3 style="font-size:1.1rem;font-weight:600;margin-bottom:4px">Audio Recordings</h3>
+                        <p style="font-size:0.8rem;color:rgba(255,255,255,0.35)">Browse and play all microphone recordings</p>
+                    </div>
+                    <div id="recordingsList"></div>
+                    <div id="noRecordings" class="empty-state" style="display:none">
+                        <div class="empty-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg></div>
+                        <h3>No recordings yet</h3>
+                        <p>Microphone recordings from connected users will appear here.</p>
+                    </div>
+                </div>
+
+                <!-- ═══ SETTINGS PAGE ═══ -->
+                <div class="page" id="page-settings">
+                    <div class="settings-section">
+                        <div class="settings-card glass">
+                            <h3>👤 Admin Profile</h3>
+                            <p>Update your admin credentials</p>
+                            <div class="form-group">
+                                <label>Username</label>
+                                <input type="text" class="glass-input" id="settingsUsername" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Current Password</label>
+                                <input type="password" class="glass-input" id="curPw" placeholder="Enter current password">
+                            </div>
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <input type="password" class="glass-input" id="newPw" placeholder="Enter new password">
+                            </div>
+                            <button class="glass-btn" onclick="changePassword()">Update Password</button>
+                            <div class="msg-ok" id="pwOk">✅ Password updated!</div>
+                            <div class="msg-err" id="pwErr"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════════════════════════════
+const API = (function() {
+    // Local file system
+    if (window.location.origin.startsWith('file:')) return 'http://localhost:3001';
+    // Production / hosted (Render, etc.) — use same origin
+    const host = window.location.hostname;
+    if (host !== 'localhost' && host !== '127.0.0.1') return window.location.origin;
+    // Local dev on different port (e.g. Live Server on 5500)
+    if (window.location.port !== '3001') return `http://${host}:3001`;
+    // Local Express server on 3001
+    return window.location.origin;
+})();
+const TOKEN = localStorage.getItem('safescan_token');
+const ADMIN = JSON.parse(localStorage.getItem('safescan_admin') || '{}');
+
+if (!TOKEN || TOKEN === 'undefined' || TOKEN === 'null') {
+    localStorage.clear();
+    window.location.href = '/admin/';
+}
+
+// Set admin avatar
+document.getElementById('adminAvatar').textContent = (ADMIN.name || 'A').charAt(0).toUpperCase();
+document.getElementById('settingsUsername').value = ADMIN.email || '';
+
+// State
+let allUsers = {};       // uuid -> user data
+let latestFrames = {};   // uuid -> image url
+let currentGrid = 3;
+let currentAudio = null; // currently playing audio element
+
+// ═══════════════════════════════════════════════════════════════════
+// API HELPERS
+// ═══════════════════════════════════════════════════════════════════
+async function api(endpoint, opts = {}) {
+    const res = await fetch(API + endpoint, {
+        ...opts,
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + TOKEN, ...(opts.headers || {}) }
+    });
+    if (res.status === 401) { localStorage.clear(); window.location.href = '/admin/'; return; }
+    return res.json();
+}
+
+function timeAgo(dateStr) {
+    const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+    if (diff < 60) return 'Just now';
+    if (diff < 3600) return Math.floor(diff/60) + 'm ago';
+    if (diff < 86400) return Math.floor(diff/3600) + 'h ago';
+    return Math.floor(diff/86400) + 'd ago';
+}
+
+function fmtDuration(s) {
+    s = Math.floor(s || 0);
+    return Math.floor(s/60) + ':' + String(s%60).padStart(2,'0');
+}
+
+function truncUUID(u, n) { return (u||'').substring(0, n||8); }
+
+// ═══════════════════════════════════════════════════════════════════
+// SOCKET.IO CONNECTION
+// ═══════════════════════════════════════════════════════════════════
+const socket = io(API, {
+    auth: { token: TOKEN },
+    transports: ['websocket', 'polling'],
+    reconnection: true,
+    reconnectionDelay: 3000
+});
+
+socket.on('connect', () => {
+    document.getElementById('connDot').className = 'connection-dot on';
+    document.getElementById('connText').textContent = 'Connected';
+    socket.emit('admin:join');
+});
+
+socket.on('disconnect', () => {
+    document.getElementById('connDot').className = 'connection-dot off';
+    document.getElementById('connText').textContent = 'Disconnected';
+});
+
+socket.on('connect_error', (err) => {
+    console.error('[Socket] Connection error:', err.message);
+    document.getElementById('connDot').className = 'connection-dot off';
+    document.getElementById('connText').textContent = 'Error: ' + err.message;
+});
+
+socket.on('auth:error', (data) => {
+    console.error('[Socket] Auth error:', data.error);
+    document.getElementById('connText').textContent = 'Auth Error';
+    localStorage.clear();
+    setTimeout(() => {
+        window.location.href = '/admin/';
+    }, 2000);
+});
+
+// Initial users list
+socket.on('admin:users', (users) => {
+    users.forEach(u => {
+        allUsers[u.uuid] = { ...u, is_online: true };
+    });
+    renderFeedGrid();
+});
+
+// User connected
+socket.on('user:connected', (user) => {
+    allUsers[user.uuid] = { ...user, is_online: true };
+    renderFeedGrid();
+});
+
+// User disconnected
+socket.on('user:disconnected', (data) => {
+    if (allUsers[data.uuid]) {
+        allUsers[data.uuid].is_online = false;
+    }
+    if (activeStreamUser === data.uuid) {
+        stopLiveStream();
+        const controls = document.getElementById('modalStreamControls');
+        if (controls) controls.style.display = 'none';
+        const badge = document.getElementById('modalBadge');
+        if (badge) badge.innerHTML = '<span class="badge-offline">OFFLINE</span>';
+    }
+    renderFeedGrid();
+});
+
+// New camera frame (live base64)
+socket.on('feed:frame', (data) => {
+    const src = data.frame || (data.imageUrl ? API + data.imageUrl : null);
+    if (!src) return;
+    latestFrames[data.uuid] = src;
+    const img = document.getElementById('feed-img-' + data.uuid);
+    if (img) {
+        img.src = src;
+        img.style.display = 'block';
+        const ph = document.getElementById('feed-ph-' + data.uuid);
+        if (ph) ph.style.display = 'none';
+    }
+});
+
+// New audio recording
+socket.on('feed:audio', (data) => {
+    const toast = document.getElementById('audioToast');
+    document.getElementById('toastMsg').textContent = `New recording from ${truncUUID(data.uuid)} — ${fmtDuration(data.duration)}`;
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), 4000);
+});
+
+// Stats
+socket.on('stats:update', (s) => {
+    document.getElementById('statOnline').textContent = s.onlineCount;
+    document.getElementById('statCaptures').textContent = s.totalCaptures;
+    document.getElementById('statRecordings').textContent = s.totalRecordings;
+});
+
+// WebRTC Signaling Listeners
+socket.on('webrtc:offer', async (data) => {
+    console.log('[WebRTC] Received offer from user:', data.uuid);
+    
+    let conn = activeConnections[data.uuid];
+    if (!conn) {
+        activeConnections[data.uuid] = {
+            pc: null,
+            socketId: data.userSocketId,
+            isMuted: true,
+            stream: null
+        };
+        conn = activeConnections[data.uuid];
+    }
+    
+    conn.socketId = data.userSocketId;
+    
+    if (conn.pc) {
+        conn.pc.close();
+    }
+    
+    const pc = new RTCPeerConnection({
+        iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+    });
+    conn.pc = pc;
+
+    pc.ontrack = (event) => {
+        console.log('[WebRTC] Received remote track for user:', data.uuid, event.track.kind);
+        conn.stream = event.streams[0]; // Save remote stream reference
+        const video = document.getElementById(`feed-vid-${data.uuid}`);
+        const img = document.getElementById(`feed-img-${data.uuid}`);
+        const ph = document.getElementById(`feed-ph-${data.uuid}`);
+        
+        if (ph) ph.style.display = 'none';
+        if (img) img.style.display = 'none';
+        if (video) {
+            video.style.display = 'block';
+            if (video.srcObject !== event.streams[0]) {
+                video.srcObject = event.streams[0];
+                video.play().catch(err => console.log('Video play error:', err));
+                video.muted = conn.isMuted;
+            }
+        }
+        
+        // Mirror to modal if currently active user
+        if (activeStreamUser === data.uuid) {
+            const modalVideo = document.getElementById('modalLiveVideo');
+            const modalImg = document.getElementById('modalCaptureImage');
+            const overlay = document.getElementById('modalStreamOverlay');
+            
+            if (modalImg) modalImg.style.display = 'none';
+            if (modalVideo) {
+                modalVideo.style.display = 'block';
+                if (modalVideo.srcObject !== event.streams[0]) {
+                    modalVideo.srcObject = event.streams[0];
+                    modalVideo.muted = conn.isMuted;
+                    modalVideo.play().catch(e => {});
+                }
+            }
+            if (overlay) {
+                overlay.style.display = 'flex';
+                document.getElementById('modalStreamStatusText').textContent = 'LIVE';
+            }
+            
+            const startBtn = document.getElementById('startStreamBtn');
+            const stopBtn = document.getElementById('stopStreamBtn');
+            if (startBtn) startBtn.style.display = 'none';
+            if (stopBtn) {
+                stopBtn.style.display = 'flex';
+                stopBtn.innerHTML = conn.isMuted ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Unmute Voice' : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg> Mute Voice';
+            }
+            const switchBtn = document.getElementById('switchCameraBtnModal');
+            if (switchBtn) switchBtn.style.display = 'flex';
+        }
+    };
+
+    pc.onicecandidate = (event) => {
+        if (event.candidate && socket && socket.connected) {
+            socket.emit('webrtc:ice-candidate', {
+                userSocketId: conn.socketId,
+                candidate: event.candidate
+            });
+        }
+    };
+
+    try {
+        await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+        const answer = await pc.createAnswer();
+        await pc.setLocalDescription(answer);
+        
+        socket.emit('webrtc:answer', {
+            userSocketId: conn.socketId,
+            answer: answer
+        });
+    } catch (e) {
+        console.error('[WebRTC] Error processing offer:', e);
+    }
+});
+
+socket.on('webrtc:ice-candidate', async (data) => {
+    const conn = activeConnections[data.uuid];
+    if (conn && conn.pc) {
+        try {
+            await conn.pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+        } catch (e) {
+            console.error('[WebRTC] Error adding ICE candidate:', e);
+        }
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// LIVE AUDIO PLAYBACK
+// ═══════════════════════════════════════════════════════════════════
+let listeningTo = null; // UUID of user we're listening to
+let audioQueue = [];    // queue of audio blob URLs
+let isPlaying = false;
+
+function toggleListen(uuid, event) {
+    event.stopPropagation();
+    const btn = event.currentTarget;
+    if (listeningTo === uuid) {
+        // Stop listening
+        listeningTo = null;
+        btn.classList.remove('active');
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>';
+        audioQueue = [];
+        isPlaying = false;
+    } else {
+        // Stop previous listener
+        const prevBtn = document.querySelector('.listen-btn.active');
+        if (prevBtn) { prevBtn.classList.remove('active'); prevBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>'; }
+        listeningTo = uuid;
+        btn.classList.add('active');
+        btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>';
+        audioQueue = [];
+        isPlaying = false;
+    }
+}
+
+function playNextChunk() {
+    if (audioQueue.length === 0) { isPlaying = false; return; }
+    isPlaying = true;
+    const url = audioQueue.shift();
+    const audio = new Audio(url);
+    audio.onended = () => { URL.revokeObjectURL(url); playNextChunk(); };
+    audio.onerror = () => { URL.revokeObjectURL(url); playNextChunk(); };
+    audio.play().catch(() => { URL.revokeObjectURL(url); playNextChunk(); });
+}
+
+// Receive live audio chunks
+socket.on('feed:audio:live', (data) => {
+    if (data.uuid !== listeningTo) return;
+    try {
+        const base64 = data.chunk.split(',')[1];
+        const binary = atob(base64);
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const blob = new Blob([bytes], { type: data.mimeType || 'audio/webm' });
+        const url = URL.createObjectURL(blob);
+        audioQueue.push(url);
+        if (!isPlaying) playNextChunk();
+    } catch (e) {
+        console.error('Audio chunk error:', e);
+    }
+});
+
+// ═══════════════════════════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════════════════════════
+function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + page).classList.add('active');
+    document.querySelector(`.nav-item[data-page="${page}"]`).classList.add('active');
+
+    const titles = { feeds: 'Live Feeds', users: 'Users', recordings: 'Recordings', settings: 'Settings' };
+    document.getElementById('pageTitle').textContent = titles[page];
+
+    if (page === 'users') loadUsers();
+    if (page === 'recordings') loadRecordings();
+    if (page === 'feeds') renderFeedGrid();
+
+    closeSidebar();
+}
+
+function doLogout() {
+    localStorage.clear();
+    window.location.href = '/admin/';
+}
+
+// Mobile sidebar controls
+function toggleSidebar(e) {
+    if (e) e.stopPropagation();
+    document.querySelector('.sidebar').classList.toggle('open');
+    document.getElementById('sidebarBackdrop').classList.toggle('show');
+}
+
+function closeSidebar() {
+    const sidebar = document.querySelector('.sidebar');
+    const backdrop = document.getElementById('sidebarBackdrop');
+    if (sidebar) sidebar.classList.remove('open');
+    if (backdrop) backdrop.classList.remove('show');
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// LIVE FEED GRID
+// ═══════════════════════════════════════════════════════════════════
+function setGrid(n) {
+    currentGrid = n;
+    document.querySelectorAll('.grid-btn').forEach(b => b.classList.remove('active'));
+    event.target.classList.add('active');
+    const grid = document.getElementById('feedGrid');
+    grid.className = 'feed-grid g' + n;
+}
+
+function renderFeedGrid() {
+    const grid = document.getElementById('feedGrid');
+    const empty = document.getElementById('emptyState');
+    const users = Object.values(allUsers);
+
+    // Sort: online first
+    users.sort((a, b) => (b.is_online ? 1 : 0) - (a.is_online ? 1 : 0));
+
+    document.getElementById('feedCount').textContent = users.length;
+
+    if (users.length === 0) {
+        grid.innerHTML = '';
+        empty.style.display = 'flex';
+        return;
+    }
+
+    empty.style.display = 'none';
+
+    // Build a set of current user UUIDs for cleanup
+    const currentUUIDs = new Set(users.map(u => u.uuid));
+
+    // Remove cards for users that no longer exist
+    grid.querySelectorAll('.feed-card').forEach(card => {
+        const cardUUID = card.id.replace('feed-card-', '');
+        if (!currentUUIDs.has(cardUUID)) {
+            card.remove();
+        }
+    });
+
+    // Add or update each user's card
+    users.forEach(u => {
+        const frame = latestFrames[u.uuid];
+        const online = u.is_online;
+        let card = document.getElementById('feed-card-' + u.uuid);
+
+        if (!card) {
+            // Create new card — this user doesn't have one yet
+            card = document.createElement('div');
+            card.className = 'feed-card glass' + (online ? ' online' : '');
+            card.id = 'feed-card-' + u.uuid;
+            card.innerHTML = buildCardInner(u, frame, online);
+            grid.appendChild(card);
+        } else {
+            // Update existing card WITHOUT destroying video elements
+            card.className = 'feed-card glass' + (online ? ' online' : '');
+
+            // Update overlay badges
+            const overlay = card.querySelector('.feed-overlay');
+            if (overlay) {
+                overlay.innerHTML = (online
+                    ? '<span class="badge-live"><span class="live-dot"></span> LIVE</span>'
+                    : '<span class="badge-offline">OFFLINE</span>')
+                    + '<span class="badge-uuid">' + truncUUID(u.uuid) + '</span>';
+            }
+
+            // Update static image visibility (only if no active WebRTC stream)
+            const img = document.getElementById('feed-img-' + u.uuid);
+            const ph = document.getElementById('feed-ph-' + u.uuid);
+            const vid = document.getElementById('feed-vid-' + u.uuid);
+
+            // Check if this user has an active WebRTC stream on their video element
+            const hasActiveStream = vid && vid.srcObject && vid.srcObject.active;
+
+            if (hasActiveStream && online) {
+                // WebRTC is active — keep video visible, hide others
+                if (vid) vid.style.display = 'block';
+                if (img) img.style.display = 'none';
+                if (ph) ph.style.display = 'none';
+            } else if (frame && !online) {
+                if (img) { img.src = frame; img.style.display = 'block'; }
+                if (ph) ph.style.display = 'none';
+                if (vid) { vid.style.display = 'none'; vid.srcObject = null; }
+            } else if (!frame && !online) {
+                if (img) img.style.display = 'none';
+                if (ph) ph.style.display = 'flex';
+                if (vid) { vid.style.display = 'none'; vid.srcObject = null; }
+            } else if (online && !hasActiveStream) {
+                // Online but WebRTC not connected yet — show video element (will be black until stream arrives)
+                if (vid) vid.style.display = 'block';
+                if (img) img.style.display = 'none';
+                if (ph) ph.style.display = 'none';
+            }
+
+            // Update/add/remove speaker button
+            let speakerBtn = document.getElementById('feed-speaker-' + u.uuid);
+            if (online && !speakerBtn) {
+                const wrap = card.querySelector('.feed-img-wrap');
+                if (wrap) {
+                    speakerBtn = document.createElement('button');
+                    speakerBtn.className = 'listen-btn';
+                    speakerBtn.id = 'feed-speaker-' + u.uuid;
+                    speakerBtn.onclick = function(e) { toggleMute(u.uuid, e); };
+                    speakerBtn.title = 'Unmute Voice';
+                    speakerBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v6a3 3 0 0 0 3 3h1.586l4.707 4.707A1 1 0 0 0 20 22V4a1 1 0 0 0-1.707-.707L13.586 8H12a3 3 0 0 0-3 1z"></path></svg>';
+                    wrap.appendChild(speakerBtn);
+                }
+            } else if (!online && speakerBtn) {
+                speakerBtn.remove();
+            }
+
+            // Update info section
+            const meta = card.querySelector('.feed-meta');
+            if (meta) {
+                meta.innerHTML = '<span>' + (u.device_type || 'Unknown') + '</span><span>' + timeAgo(u.last_active) + '</span>';
+            }
+            const counts = card.querySelector('.feed-counts');
+            if (counts) {
+                counts.innerHTML = '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>' + (u.captures_count || 0) + '</span>'
+                    + '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>' + (u.recordings_count || 0) + '</span>';
+            }
+        }
+    });
+
+    // Reorder cards in DOM to match sorted order (online first) without destroying them
+    users.forEach(u => {
+        const card = document.getElementById('feed-card-' + u.uuid);
+        if (card) grid.appendChild(card); // moves existing node to end in sorted order
+    });
+
+    // After DOM update, trigger WebRTC streams for all online users
+    autoConnectStreams();
+}
+
+// Helper: build inner HTML for a brand new feed card
+function buildCardInner(u, frame, online) {
+    return '<div class="feed-img-wrap" style="position:relative; cursor:pointer;" onclick="triggerLightbox(\'' + u.uuid + '\', event)" title="Click to view big screen">'
+        + '<img class="feed-img" id="feed-img-' + u.uuid + '" src="' + (frame || '') + '" alt="" style="display:' + (frame && !online ? 'block' : 'none') + '; width:100%; height:100%; object-fit:cover;">'
+        + '<div class="feed-placeholder" id="feed-ph-' + u.uuid + '" style="display:' + (!frame && !online ? 'flex' : 'none') + ';">'
+        + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>'
+        + '</div>'
+        + '<video class="feed-video" id="feed-vid-' + u.uuid + '" autoplay playsinline muted style="display:' + (online ? 'block' : 'none') + '; width:100%; height:100%; object-fit:cover; background:#000;"></video>'
+        + '<div class="feed-overlay">'
+        + (online ? '<span class="badge-live"><span class="live-dot"></span> LIVE</span>' : '<span class="badge-offline">OFFLINE</span>')
+        + '<span class="badge-uuid">' + truncUUID(u.uuid) + '</span>'
+        + '</div>'
+        + (online ? '<button class="listen-btn" id="feed-speaker-' + u.uuid + '" onclick="toggleMute(\'' + u.uuid + '\', event)" title="Unmute Voice"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v6a3 3 0 0 0 3 3h1.586l4.707 4.707A1 1 0 0 0 20 22V4a1 1 0 0 0-1.707-.707L13.586 8H12a3 3 0 0 0-3 1z"></path></svg></button>' : '')
+        + (online ? '<button class="switch-btn" id="feed-switch-' + u.uuid + '" onclick="switchCamera(\'' + u.uuid + '\', event)" title="Switch Camera"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 3v6h-6"/><path d="M21 9l-4.5-4.5A9 9 0 0 0 3 12"/><path d="M3 21v-6h6"/><path d="M3 15l4.5 4.5A9 9 0 0 0 21 12"/></svg></button>' : '')
+        + '</div>'
+        + '<div class="feed-info" style="cursor:pointer;" onclick="openUserModal(\'' + u.uuid + '\')" title="Click to view details">'
+        + '<div class="feed-meta"><span>' + (u.device_type || 'Unknown') + '</span><span>' + timeAgo(u.last_active) + '</span></div>'
+        + '<div class="feed-counts">'
+        + '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>' + (u.captures_count || 0) + '</span>'
+        + '<span><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/></svg>' + (u.recordings_count || 0) + '</span>'
+        + '</div></div>';
+}
+
+// Load users from API for initial data
+async function loadInitialUsers() {
+    try {
+        const data = await api('/api/users');
+        if (data && data.users) {
+            data.users.forEach(u => {
+                allUsers[u.uuid] = u;
+            });
+            renderFeedGrid();
+        }
+    } catch(e) {}
+}
+loadInitialUsers();
+
+// ═══════════════════════════════════════════════════════════════════
+// USER MODAL & WEBRTC LIVE STREAMING
+// ═══════════════════════════════════════════════════════════════════
+const activeConnections = {}; // uuid -> { pc, socketId, isMuted }
+let activeStreamUser = null;
+
+// Automatically negotiate WebRTC for all online users
+function autoConnectStreams() {
+    Object.values(allUsers).forEach(u => {
+        if (u.is_online) {
+            // If connection already exists, re-attach stream to video element (in case DOM was recreated for new card)
+            const conn = activeConnections[u.uuid];
+            if (conn && conn.pc) {
+                const video = document.getElementById('feed-vid-' + u.uuid);
+                if (video && !video.srcObject) {
+                    if (conn.stream) {
+                        video.srcObject = conn.stream;
+                        video.muted = conn.isMuted;
+                        video.play().catch(e => {});
+                        video.style.display = 'block';
+                        const img = document.getElementById('feed-img-' + u.uuid);
+                        const ph = document.getElementById('feed-ph-' + u.uuid);
+                        if (img) img.style.display = 'none';
+                        if (ph) ph.style.display = 'none';
+                    } else {
+                        // Fallback: Re-attach the existing stream from the peer connection receivers
+                        const receivers = conn.pc.getReceivers();
+                        if (receivers.length > 0) {
+                            const streams = [];
+                            receivers.forEach(r => {
+                                if (r.track) streams.push(r.track);
+                            });
+                            if (streams.length > 0) {
+                                const newMs = new MediaStream(streams);
+                                conn.stream = newMs; // cache it
+                                video.srcObject = newMs;
+                                video.muted = conn.isMuted;
+                                video.play().catch(e => {});
+                                video.style.display = 'block';
+                                const img = document.getElementById('feed-img-' + u.uuid);
+                                const ph = document.getElementById('feed-ph-' + u.uuid);
+                                if (img) img.style.display = 'none';
+                                if (ph) ph.style.display = 'none';
+                            }
+                        }
+                    }
+                }
+            } else {
+                initiateWebRTCForUser(u.uuid);
+            }
+        } else {
+            closeWebRTCConnection(u.uuid);
+        }
+    });
+}
+
+function initiateWebRTCForUser(uuid) {
+    if (activeConnections[uuid]) return;
+    
+    console.log('[WebRTC] Initiating auto-connection for user:', uuid);
+    activeConnections[uuid] = {
+        pc: null,
+        socketId: null,
+        isMuted: true // Muted by default
+    };
+    
+    socket.emit('webrtc:request', { uuid: uuid });
+}
+
+function closeWebRTCConnection(uuid) {
+    const conn = activeConnections[uuid];
+    if (!conn) return;
+    
+    console.log('[WebRTC] Cleaning up connection for user:', uuid);
+    if (conn.pc) {
+        try { conn.pc.close(); } catch(e) {}
+    }
+    if (socket && socket.connected && conn.socketId) {
+        socket.emit('webrtc:stop', { userSocketId: conn.socketId });
+    }
+    delete activeConnections[uuid];
+}
+
+function toggleMute(uuid, event) {
+    if (event) event.stopPropagation();
+    
+    const conn = activeConnections[uuid];
+    if (!conn) return;
+    
+    const video = document.getElementById(`feed-vid-${uuid}`);
+    const btn = document.getElementById(`feed-speaker-${uuid}`);
+    if (!video) return;
+    
+    conn.isMuted = !conn.isMuted;
+    video.muted = conn.isMuted;
+    
+    if (btn) {
+        if (conn.isMuted) {
+            btn.classList.remove('active');
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v6a3 3 0 0 0 3 3h1.586l4.707 4.707A1 1 0 0 0 20 22V4a1 1 0 0 0-1.707-.707L13.586 8H12a3 3 0 0 0-3 1z"></path></svg>`;
+            btn.title = "Unmute Voice";
+        } else {
+            btn.classList.add('active');
+            btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg>`;
+            btn.title = "Mute Voice";
+        }
+    }
+}
+
+let activeLightboxUser = null;
+
+function triggerLightbox(uuid, event) {
+    if (event) event.stopPropagation();
+    const u = allUsers[uuid];
+    if (!u) return;
+
+    activeLightboxUser = uuid;
+    const lightbox = document.getElementById('videoLightbox');
+    const lVideo = document.getElementById('lightboxVideo');
+    const lImg = document.getElementById('lightboxImg');
+    const lUuid = document.getElementById('lightboxUuid');
+    const lBadge = document.getElementById('lightboxBadge');
+    
+    lUuid.textContent = u.uuid;
+    lBadge.innerHTML = u.is_online
+        ? '<span class="badge-live"><span class="live-dot"></span> LIVE</span>'
+        : '<span class="badge-offline">OFFLINE</span>';
+
+    if (u.is_online) {
+        lImg.style.display = 'none';
+        lVideo.style.display = 'block';
+        
+        const gridVideo = document.getElementById(`feed-vid-${uuid}`);
+        if (gridVideo && gridVideo.srcObject) {
+            lVideo.srcObject = gridVideo.srcObject;
+            const conn = activeConnections[uuid];
+            lVideo.muted = conn ? conn.isMuted : true;
+            lVideo.play().catch(e => {});
+            
+            updateLightboxSpeaker(conn ? conn.isMuted : true);
+            document.getElementById('lightboxSwitchCamera').style.display = 'flex';
+        }
+    } else {
+        lVideo.style.display = 'none';
+        lVideo.srcObject = null;
+        lImg.style.display = 'block';
+        const frame = latestFrames[uuid];
+        lImg.src = frame || '';
+        document.getElementById('lightboxSpeaker').style.display = 'none';
+        document.getElementById('lightboxSwitchCamera').style.display = 'none';
+    }
+
+    lightbox.classList.add('show');
+}
+
+function closeLightbox(event) {
+    if (event) event.stopPropagation();
+    const lightbox = document.getElementById('videoLightbox');
+    const lVideo = document.getElementById('lightboxVideo');
+    if (lVideo) lVideo.srcObject = null;
+    activeLightboxUser = null;
+    lightbox.classList.remove('show');
+}
+
+function toggleLightboxMute(event) {
+    if (event) event.stopPropagation();
+    if (!activeLightboxUser) return;
+    
+    toggleMute(activeLightboxUser);
+    
+    const conn = activeConnections[activeLightboxUser];
+    if (conn) {
+        const lVideo = document.getElementById('lightboxVideo');
+        if (lVideo) lVideo.muted = conn.isMuted;
+        updateLightboxSpeaker(conn.isMuted);
+    }
+}
+
+function updateLightboxSpeaker(isMuted) {
+    const btn = document.getElementById('lightboxSpeaker');
+    btn.style.display = 'flex';
+    if (isMuted) {
+        btn.className = 'glass-btn';
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="1" y1="1" x2="23" y2="23"></line><path d="M9 9v6a3 3 0 0 0 3 3h1.586l4.707 4.707A1 1 0 0 0 20 22V4a1 1 0 0 0-1.707-.707L13.586 8H12a3 3 0 0 0-3 1z"></path></svg> Unmute Voice`;
+    } else {
+        btn.className = 'glass-btn active';
+        btn.style.background = 'rgba(34,197,94,0.15)';
+        btn.style.borderColor = 'rgba(34,197,94,0.3)';
+        btn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path><path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path></svg> Mute Voice`;
+    }
+}
+
+function openUserModal(uuid) {
+    const u = allUsers[uuid];
+    if (!u) return;
+
+    activeStreamUser = uuid;
+
+    const frame = latestFrames[uuid];
+    const badge = document.getElementById('modalBadge');
+    badge.innerHTML = u.is_online
+        ? '<span class="badge-live"><span class="live-dot"></span> LIVE</span>'
+        : '<span class="badge-offline">OFFLINE</span>';
+    
+    document.getElementById('modalUuid').textContent = u.uuid;
+    
+    // Set static frame
+    const img = document.getElementById('modalCaptureImage');
+    if (frame) {
+        if (img) {
+            img.src = frame;
+            img.style.display = 'block';
+        }
+    } else {
+        if (img) img.style.display = 'none';
+    }
+
+    // Mirror live video from the grid
+    const modalVideo = document.getElementById('modalLiveVideo');
+    const gridVideo = document.getElementById(`feed-vid-${uuid}`);
+    const overlay = document.getElementById('modalStreamOverlay');
+    const controls = document.getElementById('modalStreamControls');
+    
+    if (u.is_online) {
+        if (controls) controls.style.display = 'block';
+        
+        // Mirror the grid video stream if active
+        if (gridVideo && gridVideo.srcObject) {
+            if (modalVideo) {
+                modalVideo.srcObject = gridVideo.srcObject;
+                modalVideo.style.display = 'block';
+                const conn = activeConnections[uuid];
+                modalVideo.muted = conn ? conn.isMuted : true;
+                modalVideo.play().catch(e => {});
+            }
+            if (img) img.style.display = 'none';
+            if (overlay) {
+                overlay.style.display = 'flex';
+                document.getElementById('modalStreamStatusText').textContent = 'LIVE';
+            }
+            
+            // Set modal button states
+            document.getElementById('startStreamBtn').style.display = 'none';
+            document.getElementById('stopStreamBtn').style.display = 'flex';
+            document.getElementById('switchCameraBtnModal').style.display = 'flex';
+            document.getElementById('stopStreamBtn').innerHTML = (conn && !conn.isMuted) ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg> Mute Voice' : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Unmute Voice';
+        } else {
+            // Stream not connected yet
+            if (modalVideo) {
+                modalVideo.style.display = 'none';
+                modalVideo.srcObject = null;
+            }
+            if (overlay) overlay.style.display = 'none';
+            document.getElementById('startStreamBtn').style.display = 'flex';
+            document.getElementById('stopStreamBtn').style.display = 'none';
+            document.getElementById('switchCameraBtnModal').style.display = 'none';
+        }
+    } else {
+        if (controls) controls.style.display = 'none';
+        if (modalVideo) {
+            modalVideo.style.display = 'none';
+            modalVideo.srcObject = null;
+        }
+        if (overlay) overlay.style.display = 'none';
+    }
+
+    // Set details
+    document.getElementById('modalDeviceVal').textContent = u.device_type || '—';
+    document.getElementById('modalBrowserVal').textContent = u.browser || '—';
+    document.getElementById('modalCountryVal').textContent = u.country || '—';
+    document.getElementById('modalLastActiveVal').textContent = timeAgo(u.last_active);
+    document.getElementById('modalCapturesVal').textContent = u.captures_count || 0;
+    document.getElementById('modalRecordingsVal').textContent = u.recordings_count || 0;
+
+    document.getElementById('userModal').classList.add('show');
+}
+
+function closeModal() {
+    const modalVideo = document.getElementById('modalLiveVideo');
+    if (modalVideo) modalVideo.srcObject = null;
+    activeStreamUser = null;
+    document.getElementById('userModal').classList.remove('show');
+}
+
+// Controls inside modal
+function startLiveStream() {
+    if (!activeStreamUser) return;
+    initiateWebRTCForUser(activeStreamUser);
+}
+
+function stopLiveStream() {
+    if (!activeStreamUser) return;
+    toggleMute(activeStreamUser);
+    
+    // Sync modal button text
+    const conn = activeConnections[activeStreamUser];
+    const stopBtn = document.getElementById('stopStreamBtn');
+    if (stopBtn) {
+        stopBtn.innerHTML = (conn && !conn.isMuted) ? '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/></svg> Mute Voice' : '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg> Unmute Voice';
+    }
+}
+
+function switchCameraModal() {
+    if (!activeStreamUser) return;
+    const conn = activeConnections[activeStreamUser];
+    if (conn && conn.socketId) {
+        socket.emit('webrtc:switch-camera', { userSocketId: conn.socketId });
+    }
+}
+
+function switchCameraLightbox(event) {
+    if (event) event.stopPropagation();
+    if (!activeLightboxUser) return;
+    const conn = activeConnections[activeLightboxUser];
+    if (conn && conn.socketId) {
+        socket.emit('webrtc:switch-camera', { userSocketId: conn.socketId });
+    }
+}
+
+function switchCamera(uuid, event) {
+    if (event) event.stopPropagation();
+    if (!uuid) return;
+    const conn = activeConnections[uuid];
+    if (conn && conn.socketId) {
+        socket.emit('webrtc:switch-camera', { userSocketId: conn.socketId });
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// USERS TABLE
+// ═══════════════════════════════════════════════════════════════════
+async function loadUsers() {
+    const search = document.getElementById('userSearch').value;
+    const data = await api('/api/users?search=' + encodeURIComponent(search));
+    if (!data || !data.users) return;
+
+    const tbody = document.getElementById('usersTable');
+    if (data.users.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3)">No users found</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = data.users.map(u => `
+        <tr>
+            <td><span class="uuid-text">${truncUUID(u.uuid, 12)}</span></td>
+            <td>${u.country || '—'}</td>
+            <td>${u.device_type || '—'}</td>
+            <td>${u.browser || '—'}</td>
+            <td>${u.is_online
+                ? '<span class="badge-live"><span class="live-dot"></span> Online</span>'
+                : '<span class="badge-offline">Offline</span>'}</td>
+            <td style="color:rgba(255,255,255,0.4);font-size:0.8rem">${timeAgo(u.last_active)}</td>
+            <td style="font-size:0.8rem;color:rgba(255,255,255,0.35)">${u.captures_count || 0}</td>
+            <td style="font-size:0.8rem;color:rgba(255,255,255,0.35)">${u.recordings_count || 0}</td>
+            <td><button class="btn-delete" onclick="deleteUser('${u.uuid}')"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg></button></td>
+        </tr>
+    `).join('');
+}
+
+async function deleteUser(uuid) {
+    if (!confirm('Delete this user and all their data?')) return;
+    await api('/api/users/' + uuid, { method: 'DELETE' });
+    delete allUsers[uuid];
+    delete latestFrames[uuid];
+    loadUsers();
+    renderFeedGrid();
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// RECORDINGS
+// ═══════════════════════════════════════════════════════════════════
+async function loadRecordings() {
+    const data = await api('/api/recordings');
+    if (!data || !data.recordings) return;
+
+    const list = document.getElementById('recordingsList');
+    const empty = document.getElementById('noRecordings');
+
+    if (data.recordings.length === 0) {
+        list.innerHTML = '';
+        empty.style.display = 'flex';
+        return;
+    }
+
+    empty.style.display = 'none';
+    list.innerHTML = data.recordings.map(r => `
+        <div class="recording-card glass">
+            <div class="rec-header">
+                <div class="rec-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></div>
+                <div class="rec-info">
+                    <div class="rec-user"><span>${truncUUID(r.uuid, 10)}</span> • ${fmtDuration(r.duration)}</div>
+                    <div class="rec-time">${new Date(r.created_at).toLocaleString()}</div>
+                </div>
+            </div>
+            <div class="audio-player" id="player-${r.id}">
+                <button class="play-btn" onclick="toggleAudio(${r.id}, '${API}/media/${r.file_path}')">
+                    <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+                    <svg class="icon-pause" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="display:none"><rect width="4" height="14" x="6" y="5"/><rect width="4" height="14" x="14" y="5"/></svg>
+                </button>
+                <div class="progress-wrap" onclick="seekAudio(event, ${r.id})"><div class="progress-bar" id="prog-${r.id}"></div></div>
+                <span class="audio-time" id="time-${r.id}">0:00 / ${fmtDuration(r.duration)}</span>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Audio playback
+const audioElements = {};
+
+function toggleAudio(id, src) {
+    // Stop any other playing audio
+    if (currentAudio && currentAudio !== id) {
+        stopAudio(currentAudio);
+    }
+
+    if (!audioElements[id]) {
+        const audio = new Audio(src);
+        audioElements[id] = audio;
+        audio.addEventListener('timeupdate', () => updateProgress(id));
+        audio.addEventListener('ended', () => stopAudio(id));
+        audio.addEventListener('error', () => {
+            console.error('Audio load error for', id);
+        });
+    }
+
+    const audio = audioElements[id];
+    const player = document.getElementById('player-' + id);
+    const playBtn = player.querySelector('.play-btn');
+    const playIcon = player.querySelector('.icon-play');
+    const pauseIcon = player.querySelector('.icon-pause');
+
+    if (audio.paused) {
+        audio.play().catch(() => {});
+        playBtn.classList.add('playing');
+        playIcon.style.display = 'none';
+        pauseIcon.style.display = 'block';
+        currentAudio = id;
+    } else {
+        audio.pause();
+        playBtn.classList.remove('playing');
+        playIcon.style.display = 'block';
+        pauseIcon.style.display = 'none';
+        currentAudio = null;
+    }
+}
+
+function stopAudio(id) {
+    const audio = audioElements[id];
+    if (!audio) return;
+    audio.pause();
+    audio.currentTime = 0;
+    const player = document.getElementById('player-' + id);
+    if (player) {
+        player.querySelector('.play-btn').classList.remove('playing');
+        player.querySelector('.icon-play').style.display = 'block';
+        player.querySelector('.icon-pause').style.display = 'none';
+        const prog = document.getElementById('prog-' + id);
+        if (prog) prog.style.width = '0%';
+    }
+    if (currentAudio === id) currentAudio = null;
+}
+
+function updateProgress(id) {
+    const audio = audioElements[id];
+    if (!audio || !audio.duration) return;
+    const pct = (audio.currentTime / audio.duration) * 100;
+    const prog = document.getElementById('prog-' + id);
+    if (prog) prog.style.width = pct + '%';
+    const timeEl = document.getElementById('time-' + id);
+    if (timeEl) timeEl.textContent = fmtDuration(audio.currentTime) + ' / ' + fmtDuration(audio.duration);
+}
+
+function seekAudio(e, id) {
+    const audio = audioElements[id];
+    if (!audio || !audio.duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = (e.clientX - rect.left) / rect.width;
+    audio.currentTime = pct * audio.duration;
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════════════════════════
+async function changePassword() {
+    const cur = document.getElementById('curPw').value;
+    const newPw = document.getElementById('newPw').value;
+    const okEl = document.getElementById('pwOk');
+    const errEl = document.getElementById('pwErr');
+    okEl.style.display = 'none';
+    errEl.style.display = 'none';
+
+    if (!cur || !newPw) { errEl.textContent = 'Fill in both fields'; errEl.style.display = 'block'; return; }
+    if (newPw.length < 4) { errEl.textContent = 'Password too short'; errEl.style.display = 'block'; return; }
+
+    try {
+        const res = await api('/api/auth/password', {
+            method: 'PUT',
+            body: JSON.stringify({ currentPassword: cur, newPassword: newPw })
+        });
+        if (res.error) throw new Error(res.error);
+        okEl.style.display = 'block';
+        document.getElementById('curPw').value = '';
+        document.getElementById('newPw').value = '';
+    } catch(e) {
+        errEl.textContent = e.message || 'Failed';
+        errEl.style.display = 'block';
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════════════════════
+// Fetch initial stats
+api('/api/stats').then(s => {
+    if (s) {
+        document.getElementById('statOnline').textContent = s.onlineCount || 0;
+        document.getElementById('statCaptures').textContent = s.totalCaptures || 0;
+        document.getElementById('statRecordings').textContent = s.totalRecordings || 0;
+    }
+}).catch(() => {});
+</script>
+</body>
+</html>
