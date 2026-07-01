@@ -318,6 +318,11 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
 });
 
+// Serve logo.jpg directly so it loads on the frontend
+app.get('/logo.jpg', (req, res) => {
+  res.sendFile(path.join(__dirname, '..', 'logo.jpg'));
+});
+
 // Serve user-facing website at /app (same origin = no CORS issues)
 app.get('/app', (req, res) => {
   res.sendFile(path.join(__dirname, '..', 'index.html'));
