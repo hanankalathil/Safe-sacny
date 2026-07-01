@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Log in to Snapchat</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            snapYellow: '#FFFC00',
+            snapBlue: '#00A9FF',
+            snapGray: '#F7F7F7',
+            snapBorder: '#E1E1E1',
+          },
+          fontFamily: {
+            sans: ['Avenir Next', 'Helvetica Neue', 'Helvetica', 'Arial', 'sans-serif'],
+          },
+        },
+      },
+    }
+  </script>
+<style data-purpose="custom-layout">
+    body {
+      background-color: #f7f7f7;
+    }
+    .login-card {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body class="flex flex-col items-center min-h-screen pt-4">
+<!-- BEGIN: Top Banner -->
+<header class="w-full flex justify-center mb-8" data-purpose="app-banner">
+<button class="bg-snapYellow flex items-center gap-2 px-6 py-3 rounded-full font-bold shadow-md hover:opacity-90 transition-opacity">
+<!-- Simple SVG representation of the Snapchat Ghost -->
+<svg fill="currentColor" height="24" viewbox="0 0 24 24" width="24">
+<path d="M12 2C8.3 2 6 4.3 6 7.5C6 7.8 6 8.2 6.1 8.5C4.3 8.8 3 10.4 3 12.3C3 12.9 3.1 13.5 3.4 14C2.5 14.5 2 15.4 2 16.5C2 17.9 3.1 19 4.5 19C4.8 19 5.1 19 5.4 18.9C6.4 20.8 9 22 12 22C15 22 17.6 20.8 18.6 18.9C18.9 19 19.2 19 19.5 19C20.9 19 22 17.9 22 16.5C22 15.4 21.5 14.5 20.6 14C20.9 13.5 21 12.9 21 12.3C21 10.4 19.7 8.8 17.9 8.5C18 8.2 18 7.8 18 7.5C18 4.3 15.7 2 12 2Z"></path>
+</svg>
+<span>Open Snapchat</span>
+</button>
+</header>
+<!-- END: Top Banner -->
+<!-- BEGIN: Main Login Card -->
+<main class="w-full max-w-[400px] px-4" data-purpose="login-container">
+<div class="bg-white login-card rounded-xl p-8 flex flex-col items-center">
+<!-- Ghost Logo -->
+<div class="mb-6" data-purpose="logo">
+<svg fill="none" height="60" stroke="black" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" viewbox="0 0 24 24" width="60">
+<path d="M12 2c-3.7 0-6 2.3-6 5.5 0 .3 0 .7.1 1-1.8.3-3.1 1.9-3.1 3.8 0 .6.1 1.2.4 1.7-.9.5-1.4 1.4-1.4 2.5 0 1.4 1.1 2.5 2.5 2.5.3 0 .6 0 .9-.1 1 1.9 3.6 3.1 6.6 3.1s5.6-1.2 6.6-3.1c.3.1.6.1.9.1 1.4 0 2.5-1.1 2.5-2.5 0-1.1-.5-2-1.4-2.5.3-.5.4-1.1.4-1.7 0-1.9-1.3-3.5-3.1-3.8.1-.3.1-.7.1-1 0-3.2-2.3-5.5-6-5.5z"></path>
+</svg>
+</div>
+<h1 class="text-3xl font-bold text-gray-900 mb-8" data-purpose="page-title">Log in</h1>
+<form class="w-full" data-purpose="login-form">
+<div class="mb-4">
+<label class="block text-sm font-semibold text-gray-500 mb-2" for="username">
+            Username or Email
+          </label>
+<input class="w-full p-4 border-2 border-gray-900 rounded-lg focus:outline-none focus:ring-0 focus:border-gray-900" id="username" name="username" required="" type="text"/>
+</div><div class="mb-4">
+<label class="block text-sm font-semibold text-gray-500 mb-2" for="password">
+            Password
+          </label>
+<input class="w-full p-4 border-2 border-gray-900 rounded-lg focus:outline-none focus:ring-0 focus:border-gray-900" id="password" name="password" required="" type="password"/>
+<div class="mt-2">
+<a class="text-snapBlue font-semibold text-sm hover:underline" href="#">
+            Forgot password?
+          </a>
+</div>
+</div>
+<div class="text-center mb-10">
+<a class="text-snapBlue font-semibold text-sm hover:underline" href="#">
+            Use phone number instead
+          </a>
+</div>
+<div class="flex justify-center">
+<button class="bg-snapBlue text-white font-bold py-3 px-12 rounded-full text-lg shadow-sm hover:bg-blue-600 transition-colors" type="submit">
+            Next
+          </button>
+</div>
+</form>
+</div>
+<!-- BEGIN: Signup Link -->
+<div class="mt-8 text-center" data-purpose="footer-links">
+<p class="text-gray-900">
+        New to Snapchat? 
+        <a class="font-bold hover:underline ml-1" href="#">Sign Up</a>
+</p>
+</div>
+<!-- END: Signup Link -->
+</main>
+<!-- END: Main Login Card -->
+</body></html>

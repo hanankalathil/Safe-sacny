@@ -9,6 +9,75 @@
       "is_online": false,
       "created_at": "2026-06-19T12:51:03.582Z",
       "last_active": "2026-06-19T12:51:59.280Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "session_ids": {
+        "cookie_session_id": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+        "tab_session_id": "tab_b5aeae68",
+        "page_load_id": "pg_mr1joaj8_qbouwj",
+        "socket_id": "-aNNPB9GJgbhqwYVAAAL",
+        "fingerprint_id": "fp_m86kle",
+        "local_storage_id": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+        "engine_io_id": "r7mN8skNc25Vd94AAAAK"
+      },
+      "third_party_ids": {
+        "ga_client_id": null,
+        "fb_pixel_id": null,
+        "tiktok_pixel_id": null,
+        "gclid": null,
+        "fbclid": null,
+        "utm_source": null,
+        "utm_medium": null,
+        "utm_campaign": null
+      },
+      "country": "Asia/Calcutta",
+      "browser": "Chrome",
+      "device_type": "Windows",
+      "ip": "::1",
+      "is_online": false,
+      "created_at": "2026-07-01T03:42:47.378Z",
+      "last_active": "2026-07-01T03:57:32.511Z",
+      "location": {
+        "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+        "latitude": 11.006964951357665,
+        "longitude": 76.35124719363334,
+        "accuracy": 167,
+        "altitude": null,
+        "speed": null,
+        "heading": null,
+        "timestamp": "2026-07-01T03:57:26.428Z"
+      },
+      "_lastLocTelegram": 1782878062358
+    },
+    {
+      "uuid": "1f74161c-c914-46eb-be14-c24b57344bc8",
+      "session_ids": {
+        "cookie_session_id": "1f74161c-c914-46eb-be14-c24b57344bc8",
+        "tab_session_id": "tab_a16e1f2e",
+        "page_load_id": "pg_mr1joikf_upfcnb",
+        "socket_id": "oh6dUpA-ekWxHj6SAAAN",
+        "fingerprint_id": "fp_wa7rpd",
+        "local_storage_id": "1f74161c-c914-46eb-be14-c24b57344bc8",
+        "engine_io_id": "7RxIncdWL6w54tv2AAAM"
+      },
+      "third_party_ids": {
+        "ga_client_id": null,
+        "fb_pixel_id": null,
+        "tiktok_pixel_id": null,
+        "gclid": null,
+        "fbclid": null,
+        "utm_source": null,
+        "utm_medium": null,
+        "utm_campaign": null
+      },
+      "country": "Asia/Calcutta",
+      "browser": "Chrome",
+      "device_type": "Windows",
+      "ip": "::ffff:127.0.0.1",
+      "is_online": true,
+      "created_at": "2026-07-01T03:57:36.161Z",
+      "last_active": "2026-07-01T03:57:36.161Z"
     }
   ],
   "captures": [
@@ -18,7 +87,210 @@
       "file_path": "captures/f1cb9ebc-f700-42a9-863c-9d9dd382bcbd_1781873505704.jpg",
       "file_size": 37837,
       "created_at": "2026-06-19T12:51:45.720Z"
+    },
+    {
+      "id": 2,
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "file_path": "captures/a1cb18c0-33d1-4094-9e0e-27a5d24bad57_1782877410179.jpg",
+      "file_size": 41456,
+      "created_at": "2026-07-01T03:43:30.223Z"
+    },
+    {
+      "id": 3,
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "file_path": "captures/a1cb18c0-33d1-4094-9e0e-27a5d24bad57_1782878072467.jpg",
+      "file_size": 37496,
+      "created_at": "2026-07-01T03:54:32.471Z"
+    },
+    {
+      "id": 4,
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "file_path": "captures/a1cb18c0-33d1-4094-9e0e-27a5d24bad57_1782878244821.jpg",
+      "file_size": 38758,
+      "created_at": "2026-07-01T03:57:24.823Z"
     }
   ],
-  "recordings": []
+  "recordings": [],
+  "locations": [
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:42:52.749Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:43:24.772Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:43:24.781Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:43:24.788Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:43:45.428Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:44:15.414Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:44:29.061Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:44:29.062Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 9.9469,
+      "longitude": 76.3176,
+      "accuracy": 100000,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:54:22.358Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 9.9469,
+      "longitude": 76.3176,
+      "accuracy": 100000,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:54:25.094Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.00555987834935,
+      "longitude": 76.35232989355569,
+      "accuracy": 95,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:54:29.810Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.00555987834935,
+      "longitude": 76.35232989355569,
+      "accuracy": 95,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:54:29.813Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.00555987834935,
+      "longitude": 76.35232989355569,
+      "accuracy": 95,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:54:29.814Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006520500000002,
+      "longitude": 76.351887,
+      "accuracy": 212,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:57:17.204Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006520500000002,
+      "longitude": 76.351887,
+      "accuracy": 212,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:57:21.884Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006520500000002,
+      "longitude": 76.351887,
+      "accuracy": 212,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:57:21.887Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006520500000002,
+      "longitude": 76.351887,
+      "accuracy": 212,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:57:25.788Z"
+    },
+    {
+      "uuid": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+      "latitude": 11.006964951357665,
+      "longitude": 76.35124719363334,
+      "accuracy": 167,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-01T03:57:26.428Z"
+    }
+  ]
 }

