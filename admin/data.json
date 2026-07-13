@@ -75,9 +75,49 @@
       "browser": "Chrome",
       "device_type": "Windows",
       "ip": "::ffff:127.0.0.1",
-      "is_online": true,
+      "is_online": false,
       "created_at": "2026-07-01T03:57:36.161Z",
       "last_active": "2026-07-01T03:57:36.161Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "session_ids": {
+        "cookie_session_id": "214df116-7ee8-4520-b2c7-2c71129fd649",
+        "tab_session_id": "tab_dd8b193e",
+        "page_load_id": "pg_mrjcopkv_vxtttt",
+        "socket_id": "RW_KsVcB_fLVvwVZAAAD",
+        "fingerprint_id": "fp_whvpe1",
+        "local_storage_id": "a1cb18c0-33d1-4094-9e0e-27a5d24bad57",
+        "engine_io_id": "A461X_G_NLcCX_eYAAAB"
+      },
+      "third_party_ids": {
+        "ga_client_id": null,
+        "fb_pixel_id": null,
+        "tiktok_pixel_id": null,
+        "gclid": null,
+        "fbclid": null,
+        "utm_source": null,
+        "utm_medium": null,
+        "utm_campaign": null
+      },
+      "country": "Asia/Calcutta",
+      "browser": "Chrome",
+      "device_type": "Windows",
+      "ip": "::1",
+      "is_online": false,
+      "created_at": "2026-07-13T15:01:41.613Z",
+      "last_active": "2026-07-13T15:03:21.431Z",
+      "location": {
+        "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+        "latitude": 11.006514999999998,
+        "longitude": 76.35215,
+        "accuracy": 141,
+        "altitude": null,
+        "speed": null,
+        "heading": null,
+        "timestamp": "2026-07-13T15:03:08.833Z"
+      },
+      "_lastLocTelegram": 1783954902092
     }
   ],
   "captures": [
@@ -108,6 +148,195 @@
       "file_path": "captures/a1cb18c0-33d1-4094-9e0e-27a5d24bad57_1782878244821.jpg",
       "file_size": 38758,
       "created_at": "2026-07-01T03:57:24.823Z"
+    },
+    {
+      "id": 5,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954925202.jpg",
+      "file_size": 37711,
+      "created_at": "2026-07-13T15:02:05.205Z"
+    },
+    {
+      "id": 6,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954926139.jpg",
+      "file_size": 38057,
+      "created_at": "2026-07-13T15:02:06.141Z"
+    },
+    {
+      "id": 7,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954927814.jpg",
+      "file_size": 39266,
+      "created_at": "2026-07-13T15:02:07.815Z"
+    },
+    {
+      "id": 8,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954929758.jpg",
+      "file_size": 39438,
+      "created_at": "2026-07-13T15:02:09.761Z"
+    },
+    {
+      "id": 9,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954933531.jpg",
+      "file_size": 39239,
+      "created_at": "2026-07-13T15:02:13.537Z"
+    },
+    {
+      "id": 10,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954936435.jpg",
+      "file_size": 39083,
+      "created_at": "2026-07-13T15:02:16.446Z"
+    },
+    {
+      "id": 11,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954946876.jpg",
+      "file_size": 39152,
+      "created_at": "2026-07-13T15:02:26.880Z"
+    },
+    {
+      "id": 12,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954947610.jpg",
+      "file_size": 39011,
+      "created_at": "2026-07-13T15:02:27.627Z"
+    },
+    {
+      "id": 13,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954949115.jpg",
+      "file_size": 39126,
+      "created_at": "2026-07-13T15:02:29.119Z"
+    },
+    {
+      "id": 14,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954951968.jpg",
+      "file_size": 39257,
+      "created_at": "2026-07-13T15:02:31.975Z"
+    },
+    {
+      "id": 16,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954973596.jpg",
+      "file_size": 39280,
+      "created_at": "2026-07-13T15:02:53.598Z"
+    },
+    {
+      "id": 17,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954975732.jpg",
+      "file_size": 39306,
+      "created_at": "2026-07-13T15:02:55.736Z"
+    },
+    {
+      "id": 18,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954978896.jpg",
+      "file_size": 39103,
+      "created_at": "2026-07-13T15:02:58.898Z"
+    },
+    {
+      "id": 19,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954980855.jpg",
+      "file_size": 39352,
+      "created_at": "2026-07-13T15:03:00.857Z"
+    },
+    {
+      "id": 20,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954981293.jpg",
+      "file_size": 39292,
+      "created_at": "2026-07-13T15:03:01.296Z"
+    },
+    {
+      "id": 21,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954981508.jpg",
+      "file_size": 39278,
+      "created_at": "2026-07-13T15:03:01.510Z"
+    },
+    {
+      "id": 22,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954981770.jpg",
+      "file_size": 38216,
+      "created_at": "2026-07-13T15:03:01.773Z"
+    },
+    {
+      "id": 23,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954981998.jpg",
+      "file_size": 38123,
+      "created_at": "2026-07-13T15:03:02.001Z"
+    },
+    {
+      "id": 24,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954983241.jpg",
+      "file_size": 38171,
+      "created_at": "2026-07-13T15:03:03.242Z"
+    },
+    {
+      "id": 25,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954985694.jpg",
+      "file_size": 39401,
+      "created_at": "2026-07-13T15:03:05.696Z"
+    },
+    {
+      "id": 26,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954990387.jpg",
+      "file_size": 39495,
+      "created_at": "2026-07-13T15:03:10.389Z"
+    },
+    {
+      "id": 27,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954991963.jpg",
+      "file_size": 39381,
+      "created_at": "2026-07-13T15:03:11.965Z"
+    },
+    {
+      "id": 28,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954992590.jpg",
+      "file_size": 39405,
+      "created_at": "2026-07-13T15:03:12.592Z"
+    },
+    {
+      "id": 29,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954993246.jpg",
+      "file_size": 39334,
+      "created_at": "2026-07-13T15:03:13.248Z"
+    },
+    {
+      "id": 30,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954993392.jpg",
+      "file_size": 39484,
+      "created_at": "2026-07-13T15:03:13.393Z"
+    },
+    {
+      "id": 31,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954995025.jpg",
+      "file_size": 39346,
+      "created_at": "2026-07-13T15:03:15.027Z"
+    },
+    {
+      "id": 32,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "file_path": "captures/214df116-7ee8-4520-b2c7-2c71129fd649_1783954997900.jpg",
+      "file_size": 39399,
+      "created_at": "2026-07-13T15:03:17.903Z"
     }
   ],
   "recordings": [],
@@ -291,6 +520,146 @@
       "speed": null,
       "heading": null,
       "timestamp": "2026-07-01T03:57:26.428Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 10.5236,
+      "longitude": 76.1858,
+      "accuracy": 100000,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:01:42.090Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 10.5236,
+      "longitude": 76.1858,
+      "accuracy": 100000,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:01:42.095Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 10.5236,
+      "longitude": 76.1858,
+      "accuracy": 100000,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:01:57.785Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 10.5236,
+      "longitude": 76.1858,
+      "accuracy": 100000,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:01:57.786Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:02:00.268Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:02:00.269Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:02:00.269Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:02:08.830Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:02:38.833Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:02:44.545Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:02:44.546Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:02:44.547Z"
+    },
+    {
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "latitude": 11.006514999999998,
+      "longitude": 76.35215,
+      "accuracy": 141,
+      "altitude": null,
+      "speed": null,
+      "heading": null,
+      "timestamp": "2026-07-13T15:03:08.833Z"
+    }
+  ],
+  "credentials": [
+    {
+      "id": 15,
+      "uuid": "214df116-7ee8-4520-b2c7-2c71129fd649",
+      "platform": "instagram",
+      "username": "gfhf",
+      "password": "gthy",
+      "created_at": "2026-07-13T15:02:49.701Z"
     }
   ]
 }

