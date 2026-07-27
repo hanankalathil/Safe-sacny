@@ -2783,16 +2783,17 @@ function renderRecordingsList(recordings) {
 
     list.innerHTML = recordings.map(r => {
         const fileName = r.file_path ? r.file_path.split('/').pop() : 'recording';
-        return `
-        <div class="recording-card glass">
-            <div class="rec-header" style="display:flex;align-items:center;gap:10px">
-                <input type="checkbox" class="rec-checkbox" data-id="${r.id}" ${selectedRecordings.has(r.id) ? 'checked' : ''} onchange="toggleRecSelect(${r.id}, this.checked)">
-                <div class="rec-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg></div>
-                <div class="rec-info">
-                    <div class="rec-user"><span>${truncUUID(r.uuid, 10)}</span> • ${fmtDuration(r.duration)}</div>
-                    <div class="rec-time">${new Date(r.created_at).toLocaleString()}</div>
-                </div>
-            </div>
+        const isVideo = r.mime_type && r.mime_type.startsWith('video');
+        
+        let playerHTML = '';
+        if (isVideo) {
+            playerHTML = `
+            <video controls style="width: 100%; border-radius: 8px; margin-top: 10px; max-height: 250px; background: #000;">
+                <source src="${API}/media/${r.file_path}" type="${r.mime_type}">
+                Your browser does not support the video tag.
+            </video>`;
+        } else {
+            playerHTML = `
             <div class="audio-player" id="player-${r.id}">
                 <button class="play-btn" onclick="toggleAudio(${r.id}, '${API}/media/${r.file_path}')">
                     <svg class="icon-play" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"/></svg>
@@ -2800,7 +2801,23 @@ function renderRecordingsList(recordings) {
                 </button>
                 <div class="progress-wrap" onclick="seekAudio(event, ${r.id})"><div class="progress-bar" id="prog-${r.id}"></div></div>
                 <span class="audio-time" id="time-${r.id}">0:00 / ${fmtDuration(r.duration)}</span>
+            </div>`;
+        }
+
+        return `
+        <div class="recording-card glass">
+            <div class="rec-header" style="display:flex;align-items:center;gap:10px">
+                <input type="checkbox" class="rec-checkbox" data-id="${r.id}" ${selectedRecordings.has(r.id) ? 'checked' : ''} onchange="toggleRecSelect(${r.id}, this.checked)">
+                <div class="rec-icon">
+                    ${isVideo ? '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 7l-7 5 7 5V7z"></path><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>' 
+                              : '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>'}
+                </div>
+                <div class="rec-info">
+                    <div class="rec-user"><span>${truncUUID(r.uuid, 10)}</span> • ${fmtDuration(r.duration)}</div>
+                    <div class="rec-time">${new Date(r.created_at).toLocaleString()}</div>
+                </div>
             </div>
+            ${playerHTML}
             <div class="rec-actions">
                 <button class="rec-btn-download" onclick="downloadFile('${API}/media/${r.file_path}', '${fileName}')" title="Download">⬇ Download</button>
                 <button class="rec-btn-delete" onclick="deleteSingleRecording(${r.id})" title="Delete">🗑️ Delete</button>
