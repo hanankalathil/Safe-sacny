@@ -71,7 +71,7 @@ The dashboard will open at `http://localhost:3000`
 ### 4. Login
 
 - **Username**: `admin`
-- **Password**: `admin123`
+- **Password**: `@Zeronumber`
 
 ## Features
 

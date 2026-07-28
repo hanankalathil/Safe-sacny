@@ -3,7 +3,7 @@
     {
       "id": 1,
       "email": "admin",
-      "password": "$2a$10$WDalRmGLLxMz5gvN36zQvex5.N6MDByjTWEW01W7TlW2e6jCNUcaC",
+      "password": "$2a$10$G1Pt71VmSBEu/WcVi0Xv8eK8V1rOtI9HA4KTmoVA07yuVnGd8ipNa",
       "name": "Admin",
       "role": "SuperAdmin"
     }
