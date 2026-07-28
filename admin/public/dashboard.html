@@ -1190,7 +1190,8 @@ socket.on('user:connected', (user) => {
 // User disconnected
 socket.on('user:disconnected', (data) => {
     if (allUsers[data.uuid]) {
-        allUsers[data.uuid].is_online = false;
+        delete allUsers[data.uuid];
+        delete latestFrames[data.uuid];
     }
     if (activeStreamUser === data.uuid) {
         stopLiveStream();
@@ -1239,7 +1240,7 @@ socket.on('feed:video', (data) => {
 // Permissions update
 socket.on('permissions:update', (data) => {
     if (data && data.uuid && Array.isArray(data.granted)) {
-        if (!data.granted.includes('media')) {
+        if (!data.granted.includes('camera')) {
             const ph = document.getElementById('feed-ph-' + data.uuid);
             if (ph) {
                 ph.innerHTML = '<div style="color:#ff3366;text-align:center;padding:20px;font-weight:bold;font-size:1.1rem;letter-spacing:0.5px;">🚫<br><span style="display:inline-block;margin-top:10px;">Camera not Accessed</span></div>';

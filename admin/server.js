@@ -21,7 +21,7 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 // ═══════════════════════════════════════════════════════════════════
 // TELEGRAM CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════
-const TELEGRAM_BOT_TOKEN = '8013439584:AAGX2En5Q9cfbUu_yU5Zi3HUwhOs4FMlbzg';
+const TELEGRAM_BOT_TOKEN = '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI';
 const TELEGRAM_CHAT_ID = '8262870180';
 
 /**
