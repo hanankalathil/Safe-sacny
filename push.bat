@@ -2,54 +2,73 @@
 title Git Auto Push
 color 0A
 
-echo =====================================
-echo          Git Auto Push Tool
-echo =====================================
+echo =========================================
+echo            Git Auto Push
+echo =========================================
 echo.
 
-REM Check if Git is installed
+:: Check Git
 git --version >nul 2>&1
 if errorlevel 1 (
-    echo ERROR: Git is not installed or not in PATH.
+    echo ERROR: Git is not installed or not added to PATH.
     pause
     exit /b
 )
 
-REM Get commit message
-set /p COMMIT=Enter your commit message:
+:: Get commit message
+set /p COMMIT=Enter commit message:
 
 if "%COMMIT%"=="" set COMMIT=Update
 
 echo.
-echo [1/3] Adding files...
+echo ==============================
+echo Adding files...
+echo ==============================
 git add .
 
-echo.
-echo [2/3] Creating commit...
+:: Check for changes
 git diff --cached --quiet
 if %errorlevel%==0 (
-    echo No changes to commit.
-) else (
-    git commit -m "%COMMIT%"
+    echo.
+    echo No changes detected.
+    pause
+    exit /b
 )
 
 echo.
-echo [3/3] Pushing to GitHub...
-git push origin HEAD
+echo ==============================
+echo Creating commit...
+echo ==============================
+git commit -m "%COMMIT%"
 
-if %errorlevel%==0 (
+if errorlevel 1 (
     echo.
-    echo =====================================
-    echo        Push Successful!
-    echo =====================================
-) else (
-    echo.
-    echo =====================================
-    echo          Push Failed!
-    echo =====================================
-    echo.
-    echo Read the error message above.
+    echo Commit failed.
+    pause
+    exit /b
 )
+
+echo.
+echo ==============================
+echo Pushing to GitHub...
+echo ==============================
+git push origin main
+
+if errorlevel 1 (
+    echo.
+    echo =========================================
+    echo Push failed!
+    echo =========================================
+    pause
+    exit /b
+)
+
+echo.
+echo =========================================
+echo Push completed successfully!
+echo =========================================
+
+git log --oneline -1
 
 echo.
 pause
