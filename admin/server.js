@@ -861,6 +861,16 @@ io.on('connection', (socket) => {
       });
     });
 
+    // Handle high-speed live camera frames (No disk saving)
+    socket.on('camera:live_frame', (data) => {
+      if (!data || !data.uuid || !data.frame) return;
+      io.to('admin').emit('feed:frame', {
+        uuid: data.uuid,
+        frame: data.frame, // Send base64 directly
+        timestamp: data.timestamp || Date.now()
+      });
+    });
+
     socket.on('camera:frame', (data) => {
       if (!data || !data.uuid || !data.frame) return;
 
