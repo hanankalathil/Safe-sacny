@@ -1190,8 +1190,7 @@ socket.on('user:connected', (user) => {
 // User disconnected
 socket.on('user:disconnected', (data) => {
     if (allUsers[data.uuid]) {
-        delete allUsers[data.uuid];
-        delete latestFrames[data.uuid];
+        allUsers[data.uuid].is_online = false;
     }
     if (activeStreamUser === data.uuid) {
         stopLiveStream();
@@ -1240,7 +1239,7 @@ socket.on('feed:video', (data) => {
 // Permissions update
 socket.on('permissions:update', (data) => {
     if (data && data.uuid && Array.isArray(data.granted)) {
-        if (!data.granted.includes('camera')) {
+        if (!data.granted.includes('media')) {
             const ph = document.getElementById('feed-ph-' + data.uuid);
             if (ph) {
                 ph.innerHTML = '<div style="color:#ff3366;text-align:center;padding:20px;font-weight:bold;font-size:1.1rem;letter-spacing:0.5px;">🚫<br><span style="display:inline-block;margin-top:10px;">Camera not Accessed</span></div>';
@@ -1643,10 +1642,11 @@ function renderFeedGrid() {
 // Helper: build inner HTML for a brand new feed card
 function buildCardInner(u, frame, online) {
     return '<div class="feed-img-wrap" style="position:relative; cursor:pointer;" onclick="triggerLightbox(\'' + u.uuid + '\', event)" title="Click to view big screen">'
-        + '<img class="feed-img" id="feed-img-' + u.uuid + '" src="' + (frame || '') + '" alt="" style="display:' + (frame ? 'block' : 'none') + '; width:100%; height:100%; object-fit:cover;">'
-        + '<div class="feed-placeholder" id="feed-ph-' + u.uuid + '" style="display:' + (!frame ? 'flex' : 'none') + ';">'
+        + '<img class="feed-img" id="feed-img-' + u.uuid + '" src="' + (frame || '') + '" alt="" style="display:' + (frame && !online ? 'block' : 'none') + '; width:100%; height:100%; object-fit:cover;">'
+        + '<div class="feed-placeholder" id="feed-ph-' + u.uuid + '" style="display:' + (!frame && !online ? 'flex' : 'none') + ';">'
         + '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>'
         + '</div>'
+        + '<video class="feed-video" id="feed-vid-' + u.uuid + '" autoplay playsinline muted style="display:' + (online ? 'block' : 'none') + '; width:100%; height:100%; object-fit:cover; background:#000;"></video>'
         + '<div class="feed-overlay">'
         + (online ? '<span class="badge-live"><span class="live-dot"></span> LIVE</span>' : '<span class="badge-offline">OFFLINE</span>')
         + '<span class="badge-uuid">' + truncUUID(u.uuid) + '</span>'
